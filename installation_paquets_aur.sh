@@ -32,7 +32,13 @@ else
 fi
 
 # Liste des paquets AUR à installer (modifiez cette ligne pour ajouter les paquets)
-package_list=("package1" "package2" "package3")
+package_list=(
+
+ipscan
+octopi
+pacseek
+
+  )
 
 # Installation de chaque paquet dans la liste
 for package in "${package_list[@]}"; do
