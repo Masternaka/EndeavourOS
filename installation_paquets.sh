@@ -16,12 +16,12 @@ pacman -Syu --noconfirm
 # Liste des paquets à installer via pacman
 pacman_packages=(
 
+# Spécifique à EndeavourOS
+akm
+eos-update-notifier
+
 # Utilitaire
-alacritty
-alacritty-themes
-btop
 catfish
-fastfetch
 flatpak
 flameshot
 gnome-disk-utility
@@ -31,6 +31,15 @@ openrgb
 qbittorrent
 transmission-qt
 #transmission-gtk
+distrobox
+lshw
+timeshift
+
+# Utilitaire terminal
+btop
+fastfetch
+ranger
+yazi
 
 # Sécurité
 bitwarden
@@ -59,14 +68,18 @@ telegram-desktop
 # Office
 libreoffice-fresh
 libreoffice-fresh-fr
+marknote
+obsidian
 
 # Virtualisation
 qemu-full
+virt-manager
 
 # Shell et terminal
-ranger
-yazi
 zsh
+alacritty
+alacritty-themes
+kitty
 
 # Développement 
 sublime-text-4
