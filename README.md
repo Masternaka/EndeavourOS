@@ -75,3 +75,4 @@ Application à installer:
 
 - ArcoLinux Tweak Tool
 - Sofirem
+- arcolinux-app-glade
