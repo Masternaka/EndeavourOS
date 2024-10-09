@@ -31,6 +31,6 @@ echo "Samba a été installé et configuré avec succès."
 
 
 
-#Dans cet exemple, les répertoires /mnt/disque1/partage1 et /mnt/disque2/partage2 sont partagés. Vous pouvez remplacer ces chemins par ceux de vos propres répertoires.
+# Dans cet exemple, les répertoires /mnt/disque1/partage1 et /mnt/disque2/partage2 sont partagés. Vous pouvez remplacer ces chemins par ceux de vos propres répertoires.
 
-#N’oubliez pas de rendre ce script exécutable avec chmod +x nom_du_script.sh avant de l’exécuter.
+# N’oubliez pas de rendre ce script exécutable avec chmod +x nom_du_script.sh avant de l’exécuter.
