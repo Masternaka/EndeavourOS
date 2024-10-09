@@ -42,7 +42,6 @@ Par exemple, si vous souhaitez installer spotify, visual-studio-code-bin, et sla
 
 package_list=("spotify" "visual-studio-code-bin" "slack-desktop")
 
-
 Instructions :
 SCrée un fichier avec le script ci-dessus, par exemple : installation_paquets_aur.sh
 
@@ -57,6 +56,7 @@ Exécutez le script :
 Le script installera automatiquement les paquets spécifiés dans la variable package_list.
 
 *******************
+
 Le script activation-service.sh, active les services systemd sur le système.
 
 Explication :
@@ -66,3 +66,12 @@ systemctl is-enabled --quiet : Vérifie si un service est activé sans afficher 
 systemctl is-active --quiet : Vérifie si le service est en cours d'exécution de manière similaire.
 
 Avec ce script, tu t'assures de ne pas activer ou démarrer des services déjà en état actif, ce qui permet d'éviter des actions redondantes.
+
+*******************
+
+Le script ajout_repo_arco.sh, ajout le repo de Arcolinux pour avoir accès aux ArcoLinux Spices Application.
+
+Application à installer:
+
+- ArcoLinux Tweak Tool
+- Sofirem
