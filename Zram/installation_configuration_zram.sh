@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Script pour installer et configurer ZRAM sur EndeavourOS
-
 # Vérification si le script est exécuté en tant que root
 if [ "$(id -u)" -ne 0 ]; then
-    echo "Ce script doit être exécuté en tant que root (utilisez sudo)"
+    echo "Ce script doit être exécuté en tant que root. Utilisez sudo."
     exit 1
 fi
 
@@ -12,35 +10,69 @@ fi
 echo "Mise à jour du système..."
 pacman -Syu --noconfirm
 
-# Installation du package systemd-swap
-echo "Installation de systemd-swap..."
-pacman -S --noconfirm systemd-swap
+# Installer zram-generator et les dépendances nécessaires
+echo "Installation de zram-generator..."
+pacman -S --noconfirm zram-generator
 
-# Configuration de ZRAM dans /etc/systemd/swap.conf
-echo "Configuration de ZRAM..."
+# Créer le répertoire de configuration de zram
+echo "Création du répertoire de configuration de zram..."
+mkdir -p /etc/systemd/zram-generator.conf.d/
 
-# Sauvegarde du fichier original si nécessaire
-cp /etc/systemd/swap.conf /etc/systemd/swap.conf.bak
+# Créer un fichier de configuration pour ZRAM
+cat <<EOF > /etc/systemd/zram-generator.conf.d/00-zram.conf
+# Configuration pour zram-generator
 
-# Écriture de la nouvelle configuration dans swap.conf
-cat <<EOL > /etc/systemd/swap.conf
-# Active zram et désactive zswap
-zswap_enabled=0
-zram_enabled=1
+[zram0]
+# Définir la taille de ZRAM à 50% de la RAM totale
+size = 50%
 
-# Taille du zram : 50% de la RAM
-zram_size=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 2 ))
+# Utilisation de l'algorithme de compression lz4 pour de bonnes performances ou zstd pour un meilleur ratio de compression
+compression_algorithm = lz4
 
-# Compression avec zstd (plus rapide et efficace)
-zram_compression_algorithm=zstd
-EOL
+# Définir la priorité de swap pour ZRAM (plus bas = plus haute priorité)
+priority = 100
+EOF
 
-# Activation et démarrage du service systemd-swap
-echo "Activation et démarrage de systemd-swap..."
-systemctl enable --now systemd-swap
+# Recharger systemd pour appliquer la configuration
+echo "Rechargement de systemd..."
+systemctl daemon-reload
 
-# Vérification du statut du service
-echo "Vérification du statut du service systemd-swap..."
-systemctl status systemd-swap
+# Activer et démarrer le service zram-generator
+echo "Activation et démarrage de zram-generator..."
+systemctl enable zram-generator.service
+systemctl start zram-generator.service
 
-echo "ZRAM a été configuré et activé avec succès."
+# Activer le swap traditionnel si ce n'est pas déjà fait
+echo "Vérification et activation du swap traditionnel..."
+
+# Vérifier si un swap est déjà activé
+SWAP_ACTIVE=$(swapon --show)
+
+# Si aucun swap traditionnel n'est actif, activer le swap (modifier en fonction de votre partition)
+if [ -z "$SWAP_ACTIVE" ]; then
+    echo "Aucun swap traditionnel actif. Activation du swap traditionnel."
+
+    # Modifier ce chemin si vous avez une partition de swap différente
+    SWAP_PARTITION="/dev/sdX"  # Remplacez par votre partition de swap, par exemple /dev/sda2
+    swapon $SWAP_PARTITION
+else
+    echo "Le swap traditionnel est déjà actif."
+fi
+
+# Vérifier l'état du swap
+echo "Vérification de l'état du swap..."
+swapon --show
+lsblk
+
+# Vérifier et ajuster la priorité des swaps
+echo "Ajustement de la priorité du swap traditionnel..."
+
+# Définir une priorité plus basse pour le swap traditionnel (par exemple 50)
+# La priorité de ZRAM (100) sera plus haute que celle du swap traditionnel
+echo "Ajustement de la priorité de swap pour le swap traditionnel..."
+
+# Si nécessaire, vous pouvez utiliser un fichier swap :
+# Exemple de fichier swap avec une priorité faible
+echo "priority = 50" >> /etc/fstab
+
+echo "Configuration de ZRAM et du swap traditionnel terminée."
