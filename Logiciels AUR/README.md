@@ -1,9 +1,9 @@
-# EndeavourOS
-
 Le script installation_paquets_aur.sh, installes des paquets en provenance du répertoire AUR.
 
 Instructions :
+
 Dans la ligne package_list, remplacez "package1" "package2" "package3" par les noms des paquets que vous souhaitez installer :
+
 package_list=("package1" "package2" "package3")
 
 Par exemple, si vous souhaitez installer spotify, visual-studio-code-bin, et slack-desktop, la ligne deviendra :
@@ -11,7 +11,8 @@ Par exemple, si vous souhaitez installer spotify, visual-studio-code-bin, et sla
 package_list=("spotify" "visual-studio-code-bin" "slack-desktop")
 
 Instructions :
-SCrée un fichier avec le script ci-dessus, par exemple : installation_paquets_aur.sh
+
+Crée un fichier avec le script ci-dessus, par exemple : installation_paquets_aur.sh
 
 Donnez-lui les permissions d'exécution :
 
