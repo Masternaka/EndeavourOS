@@ -76,7 +76,7 @@ qemu-full
 virt-manager
 
 # Shell et terminal
-zsh
+# zsh
 alacritty
 alacritty-themes
 kitty
