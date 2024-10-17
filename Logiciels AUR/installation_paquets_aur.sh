@@ -37,6 +37,14 @@ package_list=(
 ipscan
 octopi
 pacseek
+brave-bin
+opera
+deadbeef
+simplescreenrecorder
+spotify
+alacritty-themes
+sublime-text-4
+
 
   )
 
