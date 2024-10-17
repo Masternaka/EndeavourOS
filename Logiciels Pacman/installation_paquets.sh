@@ -33,6 +33,7 @@ transmission-qt
 #transmission-gtk
 distrobox
 lshw
+fwupd
 timeshift
 
 # Utilitaire terminal
