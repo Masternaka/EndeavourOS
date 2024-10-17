@@ -1,4 +1,4 @@
-#!/bin/bash
+6#!/bin/bash
 
 #Script pour installer des paquets sur le Répertoire Arch Principal.
 
@@ -40,31 +40,26 @@ timeshift
 btop
 fastfetch
 ranger
-yazi
+#yazi
 
 # Sécurité
 bitwarden
 keepassxc
 
 # Navigateur internet et email
-brave-bin
 firefox
-opera
 thunderbird
 vivaldi
 vivaldi-ffmpeg-codecs
 
 # Multimédia
-deadbeef
-handbrake
-simplescreenrecorder
-spotify
+#handbrake
 strawberry
 vlc
 
 # Communication
 discord
-telegram-desktop
+#telegram-desktop
 
 # Office
 libreoffice-fresh
@@ -77,13 +72,12 @@ qemu-full
 virt-manager
 
 # Shell et terminal
-# zsh
+zsh
 alacritty
-alacritty-themes
-kitty
+#kitty
 
 # Développement 
-sublime-text-4
+code
 meld
 
 )
