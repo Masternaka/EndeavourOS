@@ -10,8 +10,10 @@ fi
 # Liste des applications Flatpak à installer
 applications=(
   
+com.usebottles.bottles
+io.github.sigmasd.stimulator
+org.kde.audiotube
 
-  
 )
 
 # Installation des applications
