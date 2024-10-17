@@ -44,7 +44,9 @@ simplescreenrecorder
 spotify
 alacritty-themes
 sublime-text-4
-
+pacseek
+beaver-notes
+cider
 
   )
 
