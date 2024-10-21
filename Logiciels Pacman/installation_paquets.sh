@@ -41,6 +41,7 @@ btop
 fastfetch
 ranger
 #yazi
+#fzf
 
 # Sécurité
 bitwarden
