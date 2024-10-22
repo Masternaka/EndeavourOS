@@ -106,6 +106,7 @@ sublime-text-4
 pacseek
 beaver-notes
 cider
+raindrop
 
 )
 
