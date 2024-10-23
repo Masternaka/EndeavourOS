@@ -20,11 +20,6 @@ git clone https://github.com/zsh-users/zsh-history-substring-search.git ${ZSH_CU
 git clone https://github.com/zsh-users/z.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/z
 git clone https://github.com/junegunn/fzf.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fzf-zsh-plugin
 
-# Créer le fichier de configuration ~/.zshrc si il n'existe pas
-#if [ ! -f ~/.zshrc ]; then
-#  touch ~/.zshrc
-#fi
-
 # Ajouter les configurations dans ~/.zshrc
 echo "ZSH_THEME=\"powerlevel10k/powerlevel10k\"" >> ~/.zshrc
 echo "plugins=(zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search powerlevel10k z fzf-zsh-plugin)" >> ~/.zshrc
