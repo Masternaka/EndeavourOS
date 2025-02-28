@@ -34,20 +34,22 @@ fi
 # Liste des paquets AUR à installer (modifiez cette ligne pour ajouter les paquets)
 package_list=(
 
+arch-update
 ipscan
-octopi
+#octopi
 pacseek
 brave-bin
-opera
+#opera
 deadbeef
-simplescreenrecorder
+#simplescreenrecorder
 spotify
 alacritty-themes
 sublime-text-4
-pacseek
-beaver-notes
-cider
+#beaver-notes
+#cider
 raindrop
+ulauncher
+zen-browser-bin
 
   )
 
