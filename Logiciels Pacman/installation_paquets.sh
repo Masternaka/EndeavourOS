@@ -4,7 +4,7 @@
 
 # Vérifier si l'utilisateur est root
 if [ "$EUID" -ne 0 ]
-then 
+then
   echo "Veuillez exécuter ce script en tant que root (sudo)."
   exit
 fi
@@ -19,6 +19,34 @@ pacman_packages=(
 # Spécifique à EndeavourOS
 akm
 eos-update-notifier
+
+# Spécifique à XFCE
+mugshot
+xfce4-appfinder
+xfce4-calculator-plugin
+xfce4-clipman-plugin
+xfce4-cpufreq-plugin
+xfce4-cpugraph-plugin
+xfce4-diskperf-plugin
+xfce4-docklike-plugin
+xfce4-genmon-plugin
+xfce4-indicator-plugin
+xfce4-mailwatch-plugin
+xfce4-mixer
+xfce4-mpc-plugin
+xfce4-notes-plugin
+xfce4-panel-profiles
+xfce4-places-plugin
+#xfce4-power-manager
+xfce4-sensors-plugin
+xfce4-smartbookmark-plugin
+xfce4-stopwatch-plugin
+xfce4-systemload-plugin
+#xfdashboard
+thunar-shares-plugin
+thunar-volman
+
+
 
 # Utilitaire
 catfish
@@ -42,6 +70,7 @@ fastfetch
 ranger
 #yazi
 #fzf
+helix
 
 # Sécurité
 bitwarden
@@ -73,11 +102,13 @@ qemu-full
 virt-manager
 
 # Shell et terminal
-zsh
-alacritty
-#kitty
+#zsh
+fish
+#alacritty
+kitty
+#ghostty
 
-# Développement 
+# Développement
 code
 meld
 
