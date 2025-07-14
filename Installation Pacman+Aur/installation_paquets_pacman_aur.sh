@@ -199,6 +199,24 @@ install_packages() {
         xfce4-systemload-plugin
         thunar-shares-plugin
         thunar-volman
+        xfce4-goodies
+        pavucontrol
+        gvfs
+        xarchiver
+        xfce4-xkb-plugin
+        xdg-desktop-portal-xapp
+        xdg-user-dirs-gt
+        network-manager-applet
+        gnome-keyring
+        xdg-user-dirs
+        galculator
+        gvfs-afc
+        gvfs-gphoto2
+        gvfs-mtp
+        gvfs-nfs
+        gvfs-smb
+        thunar-archive-plugin
+        thunar-media-tags-plugin
     )
   fi
 
@@ -212,7 +230,19 @@ install_packages() {
         isoimagewriter
         yakuake
         krusader
-        systemdgenie  
+        systemdgenie
+        kwrite
+        xdg-desktop-portal-kde
+        print-manager
+        ffmpegthumbs
+        qt6-multimedia
+        qt6-multimedia-gstreamer
+        qt6-multimedia-ffmpeg
+        qt6-wayland
+        kdeplasma-addons
+        plasma-systemmonitor
+        kwalletmanager
+
     )
   fi
 
@@ -220,6 +250,15 @@ install_packages() {
     packages+=(
         gnome-tweaks
         gnome-shell-extensions
+        gvfs
+        gvfs-afc
+        gvfs-gphoto2
+        gvfs-mtp
+        gvfs-nfs
+        gvfs-smb
+        xdg-user-dirs-gtk
+        adw-gtk3
+        qt6-wayland
 
     )
   fi
