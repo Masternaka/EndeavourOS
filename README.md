@@ -1,5 +1,8 @@
 # EndeavourOS
 
+*******Tester les configuration qui sont sur Gitlab en premier et une fois correct transférer les versions finals sur Github*******
+
+
 La première étape sera de changer le nombre de téléchargement parallèles de Pacman. Pour faire ce changement il faut éditer le fichier de configuration de Pacman.
 
 sudo nano /etc/pacman.conf
