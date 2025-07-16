@@ -7,7 +7,6 @@
 # 1. Sauvegardez ce script sous un nom, par exemple: mod-pacman.sh
 # 2. Rendez-le exécutable: chmod +x mod-pacman.sh
 # 3. Exécutez-le: sudo ./mod-pacman.sh
-# 4. Pour restaurer: sudo ./mod-pacman.sh --restore
 ###############################################################################
 
 # Arrête le script en cas d'erreur

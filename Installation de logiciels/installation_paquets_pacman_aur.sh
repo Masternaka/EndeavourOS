@@ -3,8 +3,12 @@ set -euo pipefail
 
 ###############################################################################
 # Script d'installation de paquets pour Arch/EndeavourOS (avec AUR en option)
-# Usage :
-#   sudo ./installation_paquets.sh [--update] [--xfce|--kde|--gnome] [--aur] [--dry-run]
+#
+# Utilisation:
+# 1. Sauvegardez ce script sous un nom, par exemple: installation_paquets_pacman_aur.sh
+# 2. Rendez-le exécutable: chmod +x installation_paquets_pacman_aur.sh
+# 3. Exécutez-le: sudo ./installation_paquets_pacman_aur.sh [--update] [--xfce|--kde|--gnome] [--aur] [--dry-run]
+# 3. Exécutez-le avec des options : sudo ./installation_paquets_pacman_aur.sh
 ###############################################################################
 
 # Couleurs
