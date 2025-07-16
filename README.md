@@ -1,10 +1,10 @@
 # EndeavourOS
 
-*******Tester les configuration qui sont sur Gitlab en premier et une fois correct transférer les versions finals sur Github*******
+******* Multiples scripts qui permet la configuration du système et l'ajout des applications qui j'utilise *******
 
+Utiliser ces scripts dans cette ordre
 
-La première étape sera de changer le nombre de téléchargement parallèles de Pacman. Pour faire ce changement il faut éditer le fichier de configuration de Pacman.
+1-
+2-
+3-
 
-sudo nano /etc/pacman.conf
-
-À la ligne ParallelDownloads = , il faut changer le chiffre pour le nombre souhaité.
