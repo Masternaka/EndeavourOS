@@ -9,6 +9,15 @@ set -euo pipefail
 # 2. Rendez-le exécutable: chmod +x installation_paquets_pacman_aur.sh
 # 3. Exécutez-le: sudo ./installation_paquets_pacman_aur.sh [--update] [--xfce|--kde|--gnome] [--aur] [--dry-run]
 # 3. Exécutez-le avec des options : sudo ./installation_paquets_pacman_aur.sh
+#
+# Options
+# --help : Affiche l'aide et quitte.
+# --update : Met à jour uniquement le système (sans installer de paquets supplémentaires).
+# --xfce : Installe les paquets spécifiques à l'environnement XFCE.
+# --kde : Installe les paquets spécifiques à l'environnement KDE.
+# --gnome : Installe les paquets spécifiques à l'environnement GNOME.
+# --aur : Installe également les paquets AUR (via yay).
+# --dry-run : Simule les installations sans effectuer de modifications.
 ###############################################################################
 
 # Couleurs
