@@ -14,7 +14,6 @@ set -euo pipefail
 # Options :
 #   -h            Affiche l'aide et quitte
 #   -n, --dry-run Affiche les commandes sans les exécuter
-#   -t, --timeout SECS  Définit le timeout pour --now (par défaut 90)
 #
 # Utilisation:
 # 1. Sauvegardez ce script sous un nom, par exemple: activation_services.sh
@@ -32,7 +31,6 @@ SERVICES=(
 )
 
 DRY_RUN=false
-TIMEOUT=90
 LOGDIR="/var/log/systemd-script"
 LOGFILE="$LOGDIR/activation-systemd-$(date +%Y%m%d-%H%M%S).log"
 LOG_CONTENT=()
@@ -48,15 +46,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help) usage ;;
     -n|--dry-run) DRY_RUN=true; shift ;;
-    -t|--timeout)
-      if [[ -n "${2:-}" && "${2}" =~ ^[0-9]+$ ]]; then
-        TIMEOUT="$2"
-        shift 2
-      else
-        echo "Erreur : --timeout requiert un nombre de secondes" >&2
-        exit 1
-      fi
-      ;;
     *)
       echo -e "\e[31mOption inconnue : $1\e[0m" >&2
       usage
@@ -90,7 +79,7 @@ for svc in "${SERVICES[@]}"; do
   LOG_CONTENT+=("==> Traitement du service : $name")
 
   run systemctl enable "$name"
-  run timeout "$TIMEOUT"s systemctl start "$name"
+  run systemctl start "$name"
   LOG_CONTENT+=("Service $name activé et démarré.")
 
   if systemctl is-enabled "$name" &>/dev/null; then
@@ -130,4 +119,4 @@ LOG_CONTENT+=("$FAIL_COUNT échec(s)")
   echo "----------------------------------------"
 } >> "$LOGFILE"
 
-echo "Opération terminée. Journal écrit dans : $LOGFILE"
+echo "Opération terminée. Journal écrit dans
