@@ -67,7 +67,12 @@ run() {
   if $DRY_RUN; then
     echo "(dry-run)"
   else
-    "$@"
+    if ! "$@"; then
+      echo -e "\e[31mErreur lors de l'exécution : $*\e[0m"
+      LOG_CONTENT+=("Erreur lors de l'exécution : $*")
+      ((FAIL_COUNT++))
+      return 1
+    fi
   fi
 }
 
@@ -81,6 +86,9 @@ for svc in "${SERVICES[@]}"; do
   run systemctl enable "$name"
   run systemctl start "$name"
   LOG_CONTENT+=("Service $name activé et démarré.")
+
+  # Affiche le statut détaillé
+  systemctl status "$name" --no-pager | tee >(while read -r line; do LOG_CONTENT+=("$line"); done)
 
   if systemctl is-enabled "$name" &>/dev/null; then
     echo -e "\e[32m✔ $name est bien activé\e[0m"
@@ -119,4 +127,4 @@ LOG_CONTENT+=("$FAIL_COUNT échec(s)")
   echo "----------------------------------------"
 } >> "$LOGFILE"
 
-echo "Opération terminée. Journal écrit dans
+echo "Opération terminée. Journal
