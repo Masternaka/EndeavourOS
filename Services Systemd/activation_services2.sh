@@ -90,7 +90,7 @@ for svc in "${SERVICES[@]}"; do
   LOG_CONTENT+=("==> Traitement du service : $name")
 
   run systemctl enable "$name"
-  run systemctl start --timeout="$TIMEOUT" "$name"
+  run timeout "$TIMEOUT"s systemctl start "$name"
   LOG_CONTENT+=("Service $name activé et démarré.")
 
   if systemctl is-enabled "$name" &>/dev/null; then
@@ -131,4 +131,3 @@ LOG_CONTENT+=("$FAIL_COUNT échec(s)")
 } >> "$LOGFILE"
 
 echo "Opération terminée. Journal écrit dans : $LOGFILE"
-// ...existing code...
