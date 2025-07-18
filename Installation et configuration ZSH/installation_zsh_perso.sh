@@ -1,5 +1,5 @@
 #!/bin/bash
-
+###### NE FONCTIONNE PAS #######
 # Script d'installation et configuration ZSH + Zinit + Oh-my-posh
 # Systèmes supportés: Arch Linux, Ubuntu, Fedora
 # Auteur: Masternaka
