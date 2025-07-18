@@ -1,6 +1,8 @@
 #!/bin/bash
 
-LOG_FILE="activation_services.log"
+LOG_DIR="$HOME/log"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/activation_services.log"
 : > "$LOG_FILE" # Vide le fichier log au début
 
 if [[ $EUID -ne 0 ]]; then
@@ -9,18 +11,28 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Liste fixe des services à gérer
-services=("bluetooth" "fstrim.timer" "ufw.service" "paccache.timer")
+services=("bluetooth.service" "fstrim.timer" "ufw.service" "paccache.timer")
 
 for service in "${services[@]}"; do
-    if systemctl enable --now "$service"; then
-        echo "Le service $service a été activé avec succès." | tee -a "$LOG_FILE"
+    echo "--- Vérification du statut de $service ---" | tee -a "$LOG_FILE"
+    systemctl status "$service" --no-pager | tee -a "$LOG_FILE"
+
+    echo "--- Démarrage de $service ---" | tee -a "$LOG_FILE"
+    if systemctl start "$service"; then
+        echo "$service démarré avec succès." | tee -a "$LOG_FILE"
     else
-        echo "Erreur lors de l'activation du service $service :" | tee -a "$LOG_FILE"
-        systemctl status "$service" --no-pager | tee -a "$LOG_FILE"
+        echo "Erreur lors du démarrage de $service." | tee -a "$LOG_FILE"
+    fi
+
+    echo "--- Activation de $service ---" | tee -a "$LOG_FILE"
+    if systemctl enable "$service"; then
+        echo "$service activé avec succès." | tee -a "$LOG_FILE"
+    else
+        echo "Erreur lors de l'activation de $service." | tee -a "$LOG_FILE"
     fi
 done
 
-echo -e "\n--- Vérification du statut des services ---" | tee -a "$LOG_FILE"
+echo -e "\n--- Vérification finale du statut des services ---" | tee -a "$LOG_FILE"
 for service in "${services[@]}"; do
     systemctl is-active "$service" &> /dev/null
     if [ $? -eq 0 ]; then
@@ -30,4 +42,4 @@ for service in "${services[@]}"; do
     fi
 done
 
-echo "Log généré dans $LOG_FILE"
+echo "Log
