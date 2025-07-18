@@ -4,9 +4,9 @@
 # Script permet l'installation automatisée des applications Flatpak
 #
 # Utilisation:
-# 1. Sauvegardez ce script sous un nom, par exemple: mod-pacman.sh
-# 2. Rendez-le exécutable: chmod +x mod-pacman.sh
-# 3. Exécutez-le: sudo ./mod-pacman.sh
+# 1. Sauvegardez ce script sous un nom, par exemple: installation_flatpak.sh
+# 2. Rendez-le exécutable: chmod +x installation_flatpak.sh
+# 3. Exécutez-le: sudo ./installation_flatpak.sh
 ###############################################################################
 
 # Arrête le script en cas d'erreur
