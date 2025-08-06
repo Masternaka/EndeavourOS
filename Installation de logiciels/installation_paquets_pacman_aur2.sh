@@ -12,10 +12,12 @@ set -euo pipefail
 # Options
 # --help : Affiche l'aide et quitte.
 # --update : Met à jour uniquement le système (sans installer de paquets supplémentaires).
-# --xfce : Installe les paquets spécifiques à l'environnement XFCE.
-# --kde : Installe les paquets spécifiques à l'environnement KDE.
-# --gnome : Installe les paquets spécifiques à l'environnement GNOME.
+# --base : Installe les paquets de base.
+# --xfce : Installe les paquets de base + XFCE.
+# --kde : Installe les paquets de base + KDE.
+# --gnome : Installe les paquets de base + GNOME.
 # --aur : Installe également les paquets AUR (via yay).
+# --aur-only : Installe uniquement les paquets AUR.
 # --dry-run : Simule les installations sans effectuer de modifications.
 ###############################################################################
 
@@ -35,6 +37,166 @@ mkdir -p "$LOG_DIR"
 chown "$SUDO_USER:$SUDO_USER" "$LOG_DIR"
 touch "$LOGFILE"
 chown "$SUDO_USER:$SUDO_USER" "$LOGFILE"
+
+# Options
+UPDATE_ONLY=false
+INSTALL_BASE=false
+USE_XFCE=false
+USE_KDE=false
+USE_GNOME=false
+INSTALL_AUR=false
+AUR_ONLY=false
+DRY_RUN=false
+
+# Fonction de journalisation
+log_message() {
+  local message="$1"
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[$timestamp] $message" >> "$LOGFILE"
+}
+
+# Fonction de confirmation
+confirm_installation() {
+  if [ "$DRY_RUN" = false ]; then
+    echo -e "${YELLOW}Continuer avec l'installation ? (y/N)${RESET}"
+    read -r -n 1 -p "> " response
+    echo
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+      echo -e "${YELLOW}Installation annulée.${RESET}"
+      exit 0
+    fi
+  fi
+}
+
+# Fonction de nettoyage en cas d'interruption
+cleanup_on_exit() {
+  local exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    log_message "ERREUR: Script interrompu (code: $exit_code)"
+    echo -e "${RED}Installation interrompue. Consultez le log: $LOGFILE${RESET}"
+  fi
+}
+
+# Validation du choix du menu
+validate_menu_choice() {
+  local choice="$1"
+  if [[ ! "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 0 ] || [ "$choice" -gt 12 ]; then
+    return 1
+  fi
+  return 0
+}
+
+# Menu avec validation améliorée
+get_user_choice() {
+  local choice
+  while true; do
+    show_interactive_menu
+    read -r -p "Votre choix (0-12): " choice
+    
+    if validate_menu_choice "$choice"; then
+      echo "$choice"
+      return 0
+    else
+      echo -e "${RED}Choix invalide. Veuillez sélectionner un nombre entre 0 et 12.${RESET}"
+      echo ""
+    fi
+  done
+}
+
+# Installation avec retry automatique
+install_package_with_retry() {
+  local package="$1"
+  local max_attempts=3
+  local attempt=1
+  
+  while [ $attempt -le $max_attempts ]; do
+    
+    if [ "$DRY_RUN" = false ]; then
+      if pacman -S --noconfirm --needed "$package" 2>&1 | tee -a "$LOGFILE"; then
+        log_message "[$package] installé avec succès"
+        return 0
+      else
+        log_message "Tentative $attempt/$max_attempts échouée pour $package"
+        if [ $attempt -lt $max_attempts ]; then
+          echo -e "${YELLOW}Nouvelle tentative dans 5 secondes...${RESET}"
+          sleep 5
+        fi
+      fi
+    else
+      echo "DRY-RUN: pacman -S --noconfirm --needed $package" | tee -a "$LOGFILE"
+      return 0
+    fi
+    
+    attempt=$((attempt + 1))
+  done
+  
+  log_message "ERREUR: Impossible d'installer $package après $max_attempts tentatives"
+  return 1
+}
+
+# Installation AUR avec retry
+install_aur_package_with_retry() {
+  local package="$1"
+  local max_attempts=3
+  local attempt=1
+  
+  while [ $attempt -le $max_attempts ]; do
+    
+    if [ "$DRY_RUN" = false ]; then
+      if sudo -u "$SUDO_USER" yay -S --noconfirm --needed "$package" 2>&1 | tee -a "$LOGFILE"; then
+        log_message "[$package] installé avec succès depuis AUR"
+        return 0
+      else
+        log_message "Tentative AUR $attempt/$max_attempts échouée pour $package"
+        if [ $attempt -lt $max_attempts ]; then
+          echo -e "${YELLOW}Nouvelle tentative dans 5 secondes...${RESET}"
+          sleep 5
+        fi
+      fi
+    else
+      echo "DRY-RUN: yay -S --noconfirm --needed $package" | tee -a "$LOGFILE"
+      return 0
+    fi
+    
+    attempt=$((attempt + 1))
+  done
+  
+  log_message "ERREUR: Impossible d'installer $package depuis AUR après $max_attempts tentatives"
+  return 1
+}
+
+# Sauvegarde des paquets installés
+backup_installed_packages() {
+  local backup_file="$LOG_DIR/packages_backup_$(date +%Y%m%d_%H%M%S).txt"
+  echo -e "${GREEN}Sauvegarde de la liste des paquets installés...${RESET}"
+  pacman -Qqe > "$backup_file"
+  chown "$SUDO_USER:$SUDO_USER" "$backup_file"
+  log_message "Sauvegarde des paquets: $backup_file"
+  echo -e "${GREEN}Sauvegarde créée: $backup_file${RESET}"
+}
+
+# Création d'un script de récupération
+create_recovery_script() {
+  local recovery_script="$LOG_DIR/recovery_$(date +%Y%m%d_%H%M%S).sh"
+  cat > "$recovery_script" << 'EOF'
+#!/bin/bash
+# Script de récupération généré automatiquement
+
+echo "=== Script de récupération ==="
+echo "Nettoyage des caches..."
+sudo pacman -Sc --noconfirm
+
+if command -v yay &>/dev/null; then
+  echo "Nettoyage du cache AUR..."
+  yay -Sc --noconfirm
+fi
+
+echo "Récupération terminée"
+EOF
+  chmod +x "$recovery_script"
+  chown "$SUDO_USER:$SUDO_USER" "$recovery_script"
+  log_message "Script de récupération créé: $recovery_script"
+}
 
 # Fonction pour afficher le menu interactif
 show_interactive_menu() {
@@ -176,84 +338,6 @@ show_help() {
   echo "Le log sera sauvegardé dans: $LOGFILE"
 }
 
-# Vérification du mode superutilisateur
-if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Veuillez exécuter ce script avec sudo.${RESET}"
-  exit 1
-fi
-
-# Vérification que SUDO_USER est défini
-if [ -z "${SUDO_USER:-}" ]; then
-  echo -e "${RED}SUDO_USER n'est pas défini. Veuillez exécuter avec sudo.${RESET}"
-  exit 1
-fi
-
-# Options
-UPDATE_ONLY=false
-INSTALL_BASE=false
-USE_XFCE=false
-USE_KDE=false
-USE_GNOME=false
-INSTALL_AUR=false
-AUR_ONLY=false
-DRY_RUN=false
-
-# Gestion des arguments
-if [ $# -eq 0 ]; then
-  # Mode interactif si aucun argument
-  while true; do
-    show_interactive_menu
-    read -p "Votre choix (0-12): " choice
-    echo ""
-    
-    if process_menu_choice "$choice"; then
-      break
-    fi
-    echo ""
-  done
-else
-  # Mode ligne de commande avec arguments
-  for arg in "$@"; do
-    case $arg in
-      --help)
-        show_help
-        exit 0
-        ;;
-      --update) UPDATE_ONLY=true ;;
-      --base) INSTALL_BASE=true ;;
-      --xfce) USE_XFCE=true; INSTALL_BASE=true ;;
-      --kde) USE_KDE=true; INSTALL_BASE=true ;;
-      --gnome) USE_GNOME=true; INSTALL_BASE=true ;;
-      --aur) INSTALL_AUR=true ;;
-      --aur-only) INSTALL_AUR=true; AUR_ONLY=true ;;
-      --dry-run) DRY_RUN=true ;;
-      *)
-        echo -e "${RED}Option inconnue: $arg${RESET}"
-        echo "Utilisez --help pour voir les options disponibles."
-        exit 1
-        ;;
-    esac
-  done
-fi
-
-# Affichage des paramètres et confirmation
-echo -e "${GREEN}=== Configuration ===${RESET}"
-echo -e "Utilisateur: $SUDO_USER"
-echo -e "Dossier home: $USER_HOME"
-echo -e "Fichier de log: $LOGFILE"
-echo -e "Mode dry-run: $DRY_RUN"
-echo -e "Installation paquets de base: $INSTALL_BASE"
-echo -e "Installation AUR: $INSTALL_AUR"
-echo -e "AUR uniquement: $AUR_ONLY"
-echo -e "Environnement: $([ "$USE_XFCE" = true ] && echo "XFCE" || [ "$USE_KDE" = true ] && echo "KDE" || [ "$USE_GNOME" = true ] && echo "GNOME" || echo "Aucun spécifique")"
-echo ""
-
-# Demander confirmation avant de continuer
-confirm_installation
-
-log_message "=== Début de l'installation ==="
-log_message "Configuration: UPDATE_ONLY=$UPDATE_ONLY, INSTALL_BASE=$INSTALL_BASE, USE_XFCE=$USE_XFCE, USE_KDE=$USE_KDE, USE_GNOME=$USE_GNOME, INSTALL_AUR=$INSTALL_AUR, AUR_ONLY=$AUR_ONLY, DRY_RUN=$DRY_RUN"
-
 # Mise à jour système
 update_system() {
   echo -e "${GREEN}Mise à jour du système...${RESET}"
@@ -283,7 +367,7 @@ install_yay() {
   fi
 }
 
-# Fonction installation de paquets
+# Fonction installation de paquets améliorée
 install_packages() {
   log_message "Début de l'installation des paquets principaux"
   
@@ -299,7 +383,6 @@ install_packages() {
       gnome-disk-utility
       gparted
       gufw
-      # firewalld
       openrgb
       qbittorrent
       transmission-qt
@@ -312,18 +395,13 @@ install_packages() {
       # Utilitaires terminal
       btop
       fastfetch
-      #ranger
-      #helix
       yazi
-      #vim
       neovim
 
       # Sécurité
-      # bitwarden
       keepassxc
 
       # Navigateur internet et email
-      #firefox
       thunderbird
       vivaldi
       vivaldi-ffmpeg-codecs
@@ -338,18 +416,13 @@ install_packages() {
       # Office
       libreoffice-fresh
       libreoffice-fresh-fr
-      #obsidian
 
       # Virtualisation
       qemu-full
       virt-manager
 
       # Shell et terminal
-      #zsh
-      #fish
       kitty
-      #alacritty
-      #ghostty
 
       # Développement
       code
@@ -448,6 +521,7 @@ install_packages() {
 
   local total_packages=${#packages[@]}
   local current_package=0
+  local failed_packages=()
 
   for pkg in "${packages[@]}"; do
     current_package=$((current_package + 1))
@@ -459,86 +533,66 @@ install_packages() {
     else
       echo -e "${GREEN}Installation de [$pkg]...${RESET}"
       log_message "Installation de [$pkg]"
-      if [ "$DRY_RUN" = false ]; then
-        if pacman -S --noconfirm --needed "$pkg" 2>&1 | tee -a "$LOGFILE"; then
-          log_message "[$pkg] installé avec succès"
-        else
-          log_message "ERREUR: Échec de l'installation de [$pkg]"
-          echo -e "${RED}Erreur lors de l'installation de [$pkg]${RESET}"
-        fi
-      else
-        echo "DRY-RUN: pacman -S --noconfirm --needed $pkg" | tee -a "$LOGFILE"
+      if ! install_package_with_retry "$pkg"; then
+        failed_packages+=("$pkg")
+        echo -e "${RED}Échec de l'installation de [$pkg]${RESET}"
       fi
     fi
   done
+
+  # Rapport des échecs
+  if [ ${#failed_packages[@]} -gt 0 ]; then
+    echo -e "${RED}Packages non installés: ${failed_packages[*]}${RESET}"
+    log_message "Packages échoués: ${failed_packages[*]}"
+  fi
   
   log_message "Fin de l'installation des paquets principaux"
 }
 
-# Installation de paquets AUR
+# Installation de paquets AUR améliorée
 install_aur_packages() {
   log_message "Début de l'installation des paquets AUR"
   
   local aur_packages=(
       # Utilitaires
-      # arch-update
       pacseek
       ipscan
-      # raindrop
-      # octopi
-      # peazip-qt-bin
 
       # Navigateur internet
       brave-bin
-      # zen-browser-bin
-      # librewolf-bin
-
-      # Utilitaires terminal
-      # alacritty-themes
 
       # Développement
-      # sublime-text-4
       github-desktop
-      #gitfiend
-      #gitahead
       gitkraken
       visual-studio-code-bin
 
       # Multimédia
       deadbeef
       spotify
-
-      # Communication
-      # vesktop-bin
-
-      # Spécifique à KDE
-      # klassy
-
-      # Spécifique à XFCE
-      #ulauncher
   )
   
   install_yay
 
   local total_aur_packages=${#aur_packages[@]}
   local current_aur_package=0
+  local failed_aur_packages=()
 
   for aur in "${aur_packages[@]}"; do
     current_aur_package=$((current_aur_package + 1))
     echo -e "${GREEN}[$current_aur_package/$total_aur_packages] Installation AUR de [$aur]...${RESET}"
     log_message "Installation AUR de [$aur]"
     
-    if [ "$DRY_RUN" = false ]; then
-      if sudo -u "$SUDO_USER" yay -S --noconfirm --needed "$aur" 2>&1 | tee -a "$LOGFILE"; then
-        log_message "[$aur] installé avec succès depuis AUR"
-      else
-        log_message "ERREUR: Échec de l'installation AUR de [$aur]"
-        echo -e "${RED}Erreur lors de l'installation AUR de [$aur]${RESET}"
-      fi
-    else
-      echo "DRY-RUN: yay -S --noconfirm --needed $aur" | tee -a "$LOGFILE"
+    if ! install_aur_package_with_retry "$aur"; then
+      failed_aur_packages+=("$aur")
+      echo -e "${RED}Échec de l'installation AUR de [$aur]${RESET}"
     fi
   done
+
+  # Rapport des échecs AUR
+  if [ ${#failed_aur_packages[@]} -gt 0 ]; then
+    echo -e "${RED}Packages AUR non installés: ${failed_aur_packages[*]}${RESET}"
+    log_message "Packages AUR échoués: ${failed_aur_packages[*]}"
+  fi
   
   log_message "Fin de l'installation des paquets AUR"
 }
@@ -556,8 +610,93 @@ cleanup() {
   fi
 }
 
-# Exécution principale
+# Résumé d'installation détaillé
+show_installation_summary() {
+  echo -e "${GREEN}=== Résumé de l'installation ===${RESET}"
+  echo -e "Utilisateur: $SUDO_USER"
+  echo -e "Date: $(date)"
+  echo -e "Paquets installés: $(pacman -Q | wc -l)"
+  echo -e "Log complet: $LOGFILE"
+  
+  if [ "$INSTALL_AUR" = true ] && command -v yay &>/dev/null; then
+    local aur_count=$(yay -Qm | wc -l)
+    echo -e "Paquets AUR installés: $aur_count"
+  fi
+  
+  echo -e "${GREEN}Installation terminée avec succès !${RESET}"
+}
+
+# Vérification du mode superutilisateur
+if [ "$EUID" -ne 0 ]; then
+  echo -e "${RED}Veuillez exécuter ce script avec sudo.${RESET}"
+  exit 1
+fi
+
+# Vérification que SUDO_USER est défini
+if [ -z "${SUDO_USER:-}" ]; then
+  echo -e "${RED}SUDO_USER n'est pas défini. Veuillez exécuter avec sudo.${RESET}"
+  exit 1
+fi
+
+# Gestion des signaux d'interruption
+trap 'log_message "Installation interrompue par l'\''utilisateur"; cleanup_on_exit; exit 130' INT TERM
+trap 'cleanup_on_exit' EXIT
+
+# Gestion des arguments
+if [ $# -eq 0 ]; then
+  # Mode interactif si aucun argument
+  choice=$(get_user_choice)
+  process_menu_choice "$choice"
+else
+  # Mode ligne de commande avec arguments
+  for arg in "$@"; do
+    case $arg in
+      --help)
+        show_help
+        exit 0
+        ;;
+      --update) UPDATE_ONLY=true ;;
+      --base) INSTALL_BASE=true ;;
+      --xfce) USE_XFCE=true; INSTALL_BASE=true ;;
+      --kde) USE_KDE=true; INSTALL_BASE=true ;;
+      --gnome) USE_GNOME=true; INSTALL_BASE=true ;;
+      --aur) INSTALL_AUR=true ;;
+      --aur-only) INSTALL_AUR=true; AUR_ONLY=true ;;
+      --dry-run) DRY_RUN=true ;;
+      *)
+        echo -e "${RED}Option inconnue: $arg${RESET}"
+        echo "Utilisez --help pour voir les options disponibles."
+        exit 1
+        ;;
+    esac
+  done
+fi
+
+# Affichage des paramètres et confirmation
+echo -e "${GREEN}=== Configuration ===${RESET}"
+echo -e "Utilisateur: $SUDO_USER"
+echo -e "Dossier home: $USER_HOME"
+echo -e "Fichier de log: $LOGFILE"
+echo -e "Mode dry-run: $DRY_RUN"
+echo -e "Installation paquets de base: $INSTALL_BASE"
+echo -e "Installation AUR: $INSTALL_AUR"
+echo -e "AUR uniquement: $AUR_ONLY"
+echo -e "Environnement: $([ "$USE_XFCE" = true ] && echo "XFCE" || [ "$USE_KDE" = true ] && echo "KDE" || [ "$USE_GNOME" = true ] && echo "GNOME" || echo "Aucun spécifique")"
+echo ""
+
+# Demander confirmation avant de continuer
+confirm_installation
+
+log_message "=== Début de l'installation ==="
+log_message "Configuration: UPDATE_ONLY=$UPDATE_ONLY, INSTALL_BASE=$INSTALL_BASE, USE_XFCE=$USE_XFCE, USE_KDE=$USE_KDE, USE_GNOME=$USE_GNOME, INSTALL_AUR=$INSTALL_AUR, AUR_ONLY=$AUR_ONLY, DRY_RUN=$DRY_RUN"
+
+# Fonction principale
 main() {
+  # Sauvegarde et préparation
+  backup_installed_packages
+  create_recovery_script
+  
+  # Mise à jour système
   update_system
 
   if [ "$UPDATE_ONLY" = false ]; then
@@ -577,13 +716,10 @@ main() {
     fi
   fi
 
+  # Résumé final
+  show_installation_summary
   log_message "=== Installation terminée ==="
-  echo -e "${GREEN}Installation terminée avec succès !${RESET}"
-  echo -e "${GREEN}Log sauvegardé dans: $LOGFILE${RESET}"
 }
-
-# Gestion des erreurs
-trap 'log_message "ERREUR: Le script s'\''est arrêté de manière inattendue"; exit 1' ERR
 
 # Exécution
 main
