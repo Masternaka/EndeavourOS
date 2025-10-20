@@ -1,6 +1,6 @@
 #### Script pour faire l'installation et la configuration de ZRAM sur Arch Linux ####
 
-# La configuration est prédéfinie dans les variables ci-dessous du script
+# La configuration est prédéfinie dans les variables du script
 
 # Utilisation:
 # 1. Sauvegardez ce script sous un nom, par exemple: Activation_zram_improved.sh
