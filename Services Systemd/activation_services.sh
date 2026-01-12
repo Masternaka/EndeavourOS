@@ -80,12 +80,11 @@ process_service() {
     
     if ! service_exists "$service"; then
         print_warning "$service n'existe pas sur ce système"
-        ((services_failed++))
-        return 0  # Continue malgré l'erreur
+        return 0  # Continue sans compter comme un échec
     fi
     
     print_info "Vérification du statut de $service"
-    systemctl status "$service" --no-pager
+    systemctl status "$service" --no-pager || true
     
     print_info "Démarrage de $service"
     if systemctl start "$service" 2>/dev/null; then
@@ -114,12 +113,11 @@ process_timer() {
     
     if ! service_exists "$timer"; then
         print_warning "$timer n'existe pas sur ce système"
-        ((timers_failed++))
-        return 0  # Continue malgré l'erreur
+        return 0  # Continue sans compter comme un échec
     fi
     
     print_info "Vérification du statut de $timer"
-    systemctl status "$timer" --no-pager
+    systemctl status "$timer" --no-pager || true
     
     print_info "Activation de $timer"
     if systemctl enable "$timer" 2>/dev/null; then
