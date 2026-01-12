@@ -64,7 +64,7 @@ cleanup_on_exit() {
 confirm_installation() {
     if [ "$DRY_RUN" = false ]; then
         echo -e "${YELLOW}Continuer avec l'installation des applications Flatpak ? (y/N)${RESET}"
-        read -r -n 1 -p "> " response
+        read -r -s -n 1 -p "> " response
         echo
         if [[ ! "$response" =~ ^[Yy]$ ]]; then
             echo -e "${YELLOW}Installation annulée.${RESET}"
@@ -84,17 +84,17 @@ install_flatpak_with_retry() {
             if flatpak install -y flathub "$app"; then
                 return 0
             else
-                if [ $attempt -lt $max_attempts ]; then
-                    echo -e "${YELLOW}Nouvelle tentative dans 5 secondes...${RESET}"
+                attempt=$((attempt + 1))
+                if [ $attempt -le $max_attempts ]; then
+                    echo -e "${YELLOW}Nouvelle tentative dans 5 secondes... (tentative $attempt/$max_attempts)${RESET}"
                     sleep 5
                 fi
+                continue
             fi
         else
             echo "DRY-RUN: flatpak install -y flathub $app"
             return 0
         fi
-        
-        attempt=$((attempt + 1))
     done
     
     return 1
@@ -166,7 +166,7 @@ install_applications() {
         echo -e "${GREEN}[$current_app/$total_apps] Installation de $app_desc...${RESET}"
         
         # Vérifier si l'application est déjà installée
-        if flatpak list | grep -q "$app_id"; then
+        if flatpak list | grep -qE "\s$app_id\s"; then
             echo -e "${YELLOW}[$app_id] déjà installé.${RESET}"
             success_count=$((success_count + 1))
         else
@@ -201,7 +201,11 @@ install_applications() {
 cleanup() {
     if [ "$DRY_RUN" = false ]; then
         echo -e "${BLUE}🧹 Nettoyage du cache Flatpak...${RESET}"
-        flatpak uninstall --unused -y 2>/dev/null || true
+        if flatpak uninstall --unused -y; then
+            echo -e "${GREEN}✓ Cache nettoyé avec succès${RESET}"
+        else
+            echo -e "${YELLOW}⚠ Aucun paquet inutilisé à nettoyer${RESET}"
+        fi
     else
         echo "DRY-RUN: Nettoyage du cache Flatpak"
     fi

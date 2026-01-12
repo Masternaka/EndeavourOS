@@ -125,19 +125,18 @@ extract_resources() {
   local desktop_out="$1"; shift
   local icon_out="$1"; shift
 
-  if "$appimage_path" --appimage-extract >/dev/null 2>&1; then
-    # Le runtime extrait dans ./squashfs-root dans le cwd; déplaçons si besoin
-    local cwd
-    cwd="$(pwd)"
-    if [[ -d "$cwd/squashfs-root" ]]; then
-      mv "$cwd/squashfs-root" "$extract_dir/" 2>/dev/null || true
+  # Tentative via --appimage-extract dans un sous-shell pour isoler le cwd
+  (
+    cd "$extract_dir" || return 1
+    if "$appimage_path" --appimage-extract >/dev/null 2>&1; then
+      return 0
     fi
-  else
+  ) || {
     # Tentative via bsdtar (certaines AppImage sont juste squashfs)
     if command -v bsdtar >/dev/null 2>&1; then
       bsdtar -xf "$appimage_path" -C "$extract_dir" 2>/dev/null || true
     fi
-  fi
+  }
 
   local found_desktop=""
   if [[ -d "$extract_dir/squashfs-root" ]]; then
@@ -246,12 +245,7 @@ install_appimage() {
   install_scope_dirs "$scope"
 
   # Détermination du nom
-  local base_name
-  if is_url "$source_path_or_url"; then
-    base_name="$(basename "$source_path_or_url")"
-  else
-    base_name="$(basename "$source_path_or_url")"
-  fi
+  local base_name="$(basename "$source_path_or_url")"
   local app_name
   if [[ -n "$name_override" ]]; then
     app_name="$(sanitize_name "$name_override")"
@@ -295,11 +289,7 @@ install_appimage() {
 
   # Base de données desktop
   if command -v update-desktop-database >/dev/null 2>&1; then
-    if [[ "$scope" == "system" ]]; then
-      update-desktop-database "$DESKTOP_DIR" || true
-    else
-      update-desktop-database "$DESKTOP_DIR" || true
-    fi
+    update-desktop-database "$DESKTOP_DIR" || true
   fi
 
   bold "Installation terminée"

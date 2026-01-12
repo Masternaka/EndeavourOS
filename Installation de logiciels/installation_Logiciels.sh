@@ -44,7 +44,7 @@ DRY_RUN=false
 confirm_installation() {
   if [ "$DRY_RUN" = false ]; then
     echo -e "${YELLOW}Continuer avec l'installation ? (y/N)${RESET}"
-    read -r -n 1 -p "> " response
+    read -r -s -n 1 -p "> " response
     echo
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
       echo -e "${YELLOW}Installation annulée.${RESET}"
@@ -99,17 +99,17 @@ install_package_with_retry() {
       if pacman -S --noconfirm --needed "$package"; then
         return 0
       else
-        if [ $attempt -lt $max_attempts ]; then
-          echo -e "${YELLOW}Nouvelle tentative dans 5 secondes...${RESET}"
+        attempt=$((attempt + 1))
+        if [ $attempt -le $max_attempts ]; then
+          echo -e "${YELLOW}Nouvelle tentative dans 5 secondes... (tentative $attempt/$max_attempts)${RESET}"
           sleep 5
         fi
+        continue
       fi
     else
       echo "DRY-RUN: pacman -S --noconfirm --needed $package"
       return 0
     fi
-    
-    attempt=$((attempt + 1))
   done
   
   return 1
@@ -203,58 +203,58 @@ process_menu_choice() {
   
   case $choice in
     1)
-      echo -e "${GREEN}Mise à jour du système uniquement${RESET}"
+      echo -e "${GREEN}✓ Mise à jour du système uniquement${RESET}"
       UPDATE_ONLY=true
       ;;
     2)
-      echo -e "${GREEN}Installation des paquets de base${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base${RESET}"
       INSTALL_BASE=true
       ;;
     3)
-      echo -e "${GREEN}Installation des paquets de base + XFCE${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + XFCE${RESET}"
       INSTALL_BASE=true
       USE_XFCE=true
       ;;
     4)
-      echo -e "${GREEN}Installation des paquets de base + KDE${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + KDE${RESET}"
       INSTALL_BASE=true
       USE_KDE=true
       ;;
     5)
-      echo -e "${GREEN}Installation des paquets de base + GNOME${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + GNOME${RESET}"
       INSTALL_BASE=true
       USE_GNOME=true
       ;;
     6)
-      echo -e "${GREEN}Installation des paquets de base + AUR${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + AUR${RESET}"
       INSTALL_BASE=true
       INSTALL_AUR=true
       ;;
     7)
-      echo -e "${GREEN}Installation des paquets de base + XFCE + AUR${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + XFCE + AUR${RESET}"
       INSTALL_BASE=true
       USE_XFCE=true
       INSTALL_AUR=true
       ;;
     8)
-      echo -e "${GREEN}Installation des paquets de base + KDE + AUR${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + KDE + AUR${RESET}"
       INSTALL_BASE=true
       USE_KDE=true
       INSTALL_AUR=true
       ;;
     9)
-      echo -e "${GREEN}Installation des paquets de base + GNOME + AUR${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets de base + GNOME + AUR${RESET}"
       INSTALL_BASE=true
       USE_GNOME=true
       INSTALL_AUR=true
       ;;
     10)
-      echo -e "${GREEN}Installation des paquets AUR uniquement${RESET}"
+      echo -e "${GREEN}✓ Installation des paquets AUR uniquement${RESET}"
       INSTALL_AUR=true
       AUR_ONLY=true
       ;;
     11)
-      echo -e "${YELLOW}Mode simulation activé${RESET}"
+      echo -e "${YELLOW}✓ Mode simulation activé${RESET}"
       DRY_RUN=true
       INSTALL_BASE=true
       ;;
