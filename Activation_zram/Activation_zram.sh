@@ -25,6 +25,9 @@ ZRAM_SIZE="ram / 2"
 # Priorité du swap. Une valeur élevée assure que ZRAM est utilisé en premier.
 ZRAM_PRIORITY=100
 
+# Type de système de fichiers. Pour un swap ZRAM, utiliser 'swap'.
+ZRAM_FS_TYPE="swap"
+
 # Variables de contrôle
 PERFORM_TEST=false
 VERBOSE=false
@@ -251,6 +254,7 @@ configure_zram() {
     print_message "INFO" "  - Algorithme : ${C_BOLD}${ZRAM_COMP_ALGO}${C_RESET}"
     print_message "INFO" "  - Taille       : ${C_BOLD}${ZRAM_SIZE}${C_RESET}"
     print_message "INFO" "  - Priorité     : ${C_BOLD}${ZRAM_PRIORITY}${C_RESET}"
+    print_message "INFO" "  - Type FS      : ${C_BOLD}${ZRAM_FS_TYPE}${C_RESET}"
     
     # Sauvegarder la configuration existante
     backup_existing_config "$CONFIG_FILE"
@@ -268,11 +272,13 @@ configure_zram() {
 #   compression-algorithm: Algorithme de compression (zstd, lz4, lzo-rle, lzo)
 #   zram-size: Taille du device ZRAM (ex: 4G, ram/2, ram/4)
 #   swap-priority: Priorité du swap (0-32767, plus élevé = utilisé en premier)
+#   fs-type: Type de système de fichiers (swap)
 
 [zram0]
 compression-algorithm = ${ZRAM_COMP_ALGO}
 zram-size = ${ZRAM_SIZE}
 swap-priority = ${ZRAM_PRIORITY}
+fs-type = ${ZRAM_FS_TYPE}
 EOF
     
     if [ -f "$CONFIG_FILE" ]; then
@@ -481,6 +487,7 @@ show_config_info() {
     echo "  Algorithme: $ZRAM_COMP_ALGO"
     echo "  Taille: $ZRAM_SIZE"
     echo "  Priorité: $ZRAM_PRIORITY"
+    echo "  Type FS: $ZRAM_FS_TYPE"
     echo "  Fichier de config: $CONFIG_FILE"
     echo "  Log: $LOG_FILE"
     echo
