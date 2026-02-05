@@ -1,0 +1,7 @@
+##### Fichier des variables d'environnement pour i3, doit être placé dans ~/.config/environment.d/ #####
+
+QT_QPA_PLATFORMTHEME=qt5ct
+QT_STYLE_OVERRIDE=kvantum
+GTK_THEME=Arc-Dawn-Dark
+EDITOR=nano
+BROWSER=firefox
