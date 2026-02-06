@@ -114,7 +114,7 @@ fi
 # Package groups for better organization
 PACKAGES_CORE=(
     xorg-server xorg-xinit xorg-xbacklight xbindkeys xvkbd xorg-xinput
-    base-devel i3 sxhkd xdotool
+    base-devel i3-wm sxhkd xdotool
     libnotify arandr 
 )
 
