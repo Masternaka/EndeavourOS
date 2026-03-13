@@ -121,7 +121,7 @@ show_help() {
   echo "  - Navigateurs: thunderbird, vivaldi"
   echo "  - Multimédia: strawberry, vlc"
   echo "  - Communication: discord"
-  echo "  - Office: libreoffice-fresh, libreoffice-fresh-fr"
+  echo "  - Office et notes: libreoffice-fresh, libreoffice-fresh-fr, obsidian"
   echo "  - Développement: code, meld, zed"
   echo "  - Virtualisation: qemu-full, virt-manager"
 }
@@ -199,9 +199,10 @@ install_packages() {
       # Communication
       discord
 
-      # Office
+      # Office et notes
       libreoffice-fresh
       libreoffice-fresh-fr
+      obsidian
 
       # Virtualisation
       qemu-full

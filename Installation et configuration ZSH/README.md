@@ -92,3 +92,18 @@ rm -f ~/.poshtheme.omp.json
 - Complétions Zsh lentes ou warnings `compaudit`:
   - Vous pouvez exécuter `compaudit` et corriger les permissions
   - Ou forcer `compinit -u` dans votre config si vous savez ce que vous faites
+
+
+# Installation complète (recommandé)
+sudo ./install_zsh_complete.sh
+
+# Installation sans outils de productivité
+sudo ./install_zsh_complete.sh --no-tools
+
+# Mode verbose avec thème spécifique
+sudo ./install_zsh_complete.sh --verbose --theme macchiato
+
+# Simulation pour vérifier
+sudo ./install_zsh_complete.sh --dry-run
+
+Si le script install_zsh_complete.sh fonctionne, il faudra détruire le script install_zoxide_fzf_bat_eza_ripgrep.sh et installation_zsh.sh. Ne serviront plus.
