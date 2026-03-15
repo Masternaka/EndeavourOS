@@ -1,5 +1,20 @@
 # Scripts d'installation pour EndeavourOS/Arch Linux
 
+install_zoxide_fzf_bat_eza_ripgrep = fonctionne
+installation_flatpak = ne fonctionne pas
+./installation_flatpak.sh: ligne 31: SUDO_USER : variable sans liaison
+[gabriel@gabriel-ubuntu2404pc Installation de logiciels]$ sudo ./installation_flatpak.sh 
+[sudo] Mot de passe de gabriel : 
+=== Script d'installation des applications Flatpak ===
+Utilisateur: gabriel
+Date: dim 15 mar 2026 16:31:56 EDT
+Mode dry-run: false
+
+❌ Flatpak n'est pas installé. Veuillez l'installer d'abord avec:
+sudo pacman -S flatpak
+Installation interrompue.
+
+
 Ce dossier contient une suite complète de scripts d'installation automatisés pour EndeavourOS et Arch Linux, divisés par catégorie pour plus de flexibilité.
 
 ## 📦 Scripts disponibles

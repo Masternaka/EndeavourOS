@@ -1,4 +1,4 @@
-# Script de modification de Pacman: ParallelDownloads
+# Script de modification de Pacman: ParallelDownloads (FONCTIONNE)
 
 Ce dossier contient le script `mod_pacman.sh` (Version améliorée 2.0) permettant de consulter, modifier ou désactiver la valeur `ParallelDownloads` dans le fichier de configuration de Pacman (`/etc/pacman.conf`). Il gère automatiquement la sauvegarde, la restauration et la validation de la configuration.
 

@@ -1,4 +1,31 @@
-## Installation Zsh + Zinit + Oh My Posh (Catppuccin) pour Arch/EndeavourOS
+## Installation Zsh + Zinit + Oh My Posh (Catppuccin) pour Arch/EndeavourOS (Fonctionne avec erreur)
+
+Erreur dans le script install_zsh_complete.sh:
+✨ Installation de Oh My Posh...
+↘ Repli: installation via le script officiel (HTTPS)
+⚠  Installation directory /root/.local/bin is not in your $PATH, add it using 
+export PATH=$PATH:/root/.local/bin
+
+🎨 Installation du thème Oh My Posh...
+Souhaitez-vous choisir une variante Catppuccin ?
+1) latte (clair)
+2) frappe
+3) macchiato
+4) mocha (foncé)
+Votre choix [4]: 4
+curl: (22) The requested URL returned error: 404
+⚠ Impossible de télécharger le thème depuis THEME_URL. Étape ignorée.
+
+curl: (22) The requested URL returned error: 404
+⚠ Impossible d'installer la police JetBrainsMono Nerd Font. Étape ignorée.
+
+erreur downloading fzf-zsh-pluging
+erreur downloading zsh-zoxide
+erreur downloading zdharma-continum/zsh-bat
+
+Zsh ne part pas automatiquement après l'installation
+
+
 
 Ce script automatise l’installation et la configuration d’un environnement Zsh moderne sur Arch/EndeavourOS:
 - Installe Zsh, Zinit, Oh My Posh et une Nerd Font
