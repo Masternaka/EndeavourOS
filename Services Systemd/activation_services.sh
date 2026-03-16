@@ -1,37 +1,6 @@
 #!/bin/bash
-set -euo pipefail
 
-###############################################################################
-# Script de modification activation des services et timers
-# Optimisé pour EndeavourOS/Arch Linux
-#
-# Utilisation:
-# 1. Sauvegardez ce script sous un nom, par exemple: activation_services.sh
-# 2. Rendez-le exécutable: chmod +x activation_services.sh
-# 3. Exécutez-le: sudo ./activation_services.sh [options]
-#
-# Options:
-# 1. Simulation sans modifier
-# sudo ./activation_services.sh --dry-run
-# 
-# 2. Mode détaillé
-# sudo ./activation_services.sh --verbose
-# 
-# 3. Sans backup
-# sudo ./activation_services.sh --no-backup
-# 
-# 4. Aide
-# sudo ./activation_services.sh --help
-#
-# Fonctionnalités:
-# - Activation automatique des services système essentiels
-# - Gestion séparée des services et timers
-# - Vérification de disponibilité avant traitement
-# - Compteurs de succès/échecs
-# - Interface colorée et claire
-# - Options de configuration flexibles
-# - Mode dry-run pour simulation
-###############################################################################
+set -euo pipefail
 
 # Configuration des couleurs
 RED='\033[0;31m'

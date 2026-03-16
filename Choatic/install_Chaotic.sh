@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Script d'installation du dépôt Chaotic-AUR sur Arch Linux
-# Auteur: Masternaka (Version corrigée)
-# Date: $(date +%Y-%m-%d)
-
 set -e
 
 # Couleurs pour une meilleure lisibilité

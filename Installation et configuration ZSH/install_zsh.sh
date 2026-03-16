@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
 ###############################################################################
-# Script d'installation Zsh + Zinit + Oh My Posh (Catppuccin) pour Arch/EndeavourOS
+# Script d'installation Zsh + Zinit + Oh My Posh + Outils de productivité
+# Pour Arch/EndeavourOS
 #
 # Description:
-# - Installe Zsh, Zinit, Oh My Posh, une Nerd Font, et configure un thème Catppuccin
+# - Installe Zsh, Zinit, Oh My Posh, JetBrainsMono Nerd Font
+# - Installe les outils de productivité: zoxide, fzf, fd, eza, ripgrep, bat
+# - Configure un thème Catppuccin Oh My Posh
 # - Ajoute les plugins Zsh: zsh-completions, zsh-autosuggestions,
-#   zsh-bat, fzf-zsh-plugin, zsh-zoxide, zsh-syntax-highlighting (chargé en dernier)
+#   zsh-bat, unixorn/fzf-zsh-plugin, z-shell/zsh-zoxide, zsh-syntax-highlighting
+# - Configure les alias et variables d'environnement optimisés
 # - Modifie le shell par défaut uniquement si nécessaire
 # - N'écrase pas votre ~/.zshrc: crée une sauvegarde et ajoute un bloc géré
 #
@@ -16,25 +20,27 @@
 # - Connexion internet
 #
 # Utilisation rapide:
-# 1. Sauvegardez ce script: install-zsh-env.sh
-# 2. Rendez-le exécutable: chmod +x install-zsh-env.sh
-# 3. Exécutez-le: sudo ./install-zsh-env.sh [options]
+# 1. Sauvegardez ce script: install-zsh.sh
+# 2. Rendez-le exécutable: chmod +x install-zsh.sh
+# 3. Exécutez-le: sudo ./install-zsh.sh [options]
 #
 # Options:
 #   --dry-run         Simule les actions sans rien modifier
 #   --verbose         Affiche des logs détaillés
 #   --theme NAME      Variante Catppuccin: latte | frappe | macchiato | mocha
 #   --theme-url URL   URL d'un thème Oh My Posh (prioritaire sur --theme)
+#   --no-tools        N'installe que Zsh/Zinit/Oh My Posh (pas les outils)
 #   -h, --help        Affiche l'aide et quitte
 #
 # Exemples:
-#   sudo ./install-zsh-env.sh --dry-run
-#   sudo ./install-zsh-env.sh --verbose --theme macchiato
-#   sudo ./install-zsh-env.sh --theme-url https://exemple/mon_theme.omp.json
+#   sudo ./install-zsh.sh --dry-run
+#   sudo ./install-zsh.sh --verbose --theme macchiato
+#   sudo ./install-zsh.sh --theme-url https://exemple/mon_theme.omp.json
+#   sudo ./install-zsh.sh --no-tools
 #
 # Notes:
 # - Le thème est téléchargé dans ~/.poshtheme.omp.json
-# - La configuration ajoutée est délimitée par: # >>> zsh-setup managed block >>>
+# - La configuration ajoutée est délimitée par: # >>> zsh-complete managed block >>>
 # - Le script est idempotent: réexécutable sans casser l'environnement
 ###############################################################################
 
@@ -48,6 +54,7 @@ trap 'echo "❗ Une erreur est survenue à la ligne ${LINENO}. Arrêt." >&2' ERR
 DRY_RUN=false
 VERBOSE=false
 THEME_FLAG_SET=false
+INSTALL_TOOLS=true
 THEME_NAME=${THEME_NAME:-"catppuccin"}
 THEME_URL=${THEME_URL:-"https://raw.githubusercontent.com/catppuccin/oh-my-posh/main/themes/catppuccin_mocha.omp.json"}
 
@@ -60,7 +67,13 @@ Options:
   --verbose       Afficher des logs détaillés
   --theme NAME    Nom du thème (par défaut: catppuccin)
   --theme-url URL URL du thème OMP (prioritaire sur --theme)
+  --no-tools      N'installer que Zsh/Zinit/Oh My Posh (pas les outils)
   -h, --help      Afficher cette aide
+
+Exemples:
+  sudo $0 --dry-run
+  sudo $0 --verbose --theme macchiato
+  sudo $0 --no-tools
 USAGE
 }
 
@@ -70,6 +83,7 @@ while [[ ${1:-} ]]; do
     --verbose) VERBOSE=true ; shift ;;
     --theme) THEME_NAME="$2" ; THEME_FLAG_SET=true ; shift 2 ;;
     --theme-url) THEME_URL="$2" ; THEME_FLAG_SET=true ; shift 2 ;;
+    --no-tools) INSTALL_TOOLS=false ; shift ;;
     -h|--help) print_usage ; exit 0 ;;
     *) echo "Argument inconnu: $1" >&2 ; print_usage ; exit 1 ;;
   esac
@@ -93,12 +107,35 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-# --- Paquets requis ---
-echo "📦 Installation des dépendances..."
-run pacman -Sy --noconfirm --needed zsh git curl wget unzip fzf fd eza ripgrep bat || {
-  echo "❌ Impossible de mettre à jour la base de paquets ou d’installer les dépendances." >&2
+# --- Paquets requis de base ---
+echo "📦 Installation des dépendances de base..."
+run pacman -Sy --noconfirm --needed zsh git curl wget unzip || {
+  echo "❌ Impossible de mettre à jour la base de paquets ou d'installer les dépendances." >&2
   exit 1
 }
+
+# --- Installation des outils de productivité ---
+if [[ "$INSTALL_TOOLS" == true ]]; then
+  echo "🛠️  Installation des outils de productivité..."
+  
+  # Installation de tous les outils en une seule commande
+  run pacman -S --noconfirm --needed \
+    zoxide \
+    fzf \
+    fd \
+    eza \
+    ripgrep \
+    bat || {
+    echo "❌ Impossible d'installer les outils de productivité." >&2
+    exit 1
+  }
+  
+  echo "✅ Outils de productivité installés avec succès"
+  echo
+else
+  echo "ℹ️  Installation des outils de productivité ignorée (--no-tools)"
+  echo
+fi
 
 # --- Installation de Oh My Posh ---
 echo "✨ Installation de Oh My Posh..."
@@ -114,7 +151,7 @@ if ! command -v oh-my-posh &>/dev/null; then
       echo "[dry-run] curl -fsSL https://ohmyposh.dev/install.sh | bash -s"
     else
       curl -fsSL https://ohmyposh.dev/install.sh | bash -s || {
-        echo "❌ Échec de l’installation de Oh My Posh." >&2
+        echo "❌ Échec de l'installation de Oh My Posh." >&2
         exit 1
       }
     fi
@@ -138,7 +175,7 @@ else
 fi
 
 # --- Configuration Zsh utilisateur ---
-# Détermination robuste de l’utilisateur cible
+# Détermination robuste de l'utilisateur cible
 USER_NAME=${SUDO_USER:-$(logname 2>/dev/null || true)}
 if [[ -z "${USER_NAME:-}" ]]; then
   USER_NAME=$(id -un)
@@ -146,19 +183,19 @@ fi
 USER_HOME=$(eval echo "~$USER_NAME")
 ZSHRC="$USER_HOME/.zshrc"
 
-echo "🧩 Configuration de Zsh pour l’utilisateur $USER_NAME..."
+echo "🧩 Configuration de Zsh pour l'utilisateur $USER_NAME..."
 
-# Sauvegarde éventuelle et append via marqueurs pour éviter d’écraser la conf
+# Sauvegarde éventuelle et append via marqueurs pour éviter d'écraser la conf
 timestamp=$(date +%Y%m%d-%H%M%S)
-if [[ -f "$ZSHRC" && -z "$(grep -F "# >>> zsh-setup managed block >>>" "$ZSHRC" || true)" ]]; then
+if [[ -f "$ZSHRC" && -z "$(grep -F "# >>> zsh-complete managed block >>>" "$ZSHRC" || true)" ]]; then
   run cp -a "$ZSHRC" "${ZSHRC}.backup-${timestamp}"
   echo "💾 Sauvegarde de .zshrc -> ${ZSHRC}.backup-${timestamp}"
 fi
 
 run sudo -u "$USER_NAME" touch "$ZSHRC"
-if ! grep -Fq "# >>> zsh-setup managed block >>>" "$ZSHRC"; then
+if ! grep -Fq "# >>> zsh-complete managed block >>>" "$ZSHRC"; then
   cat >> "$ZSHRC" <<'EOF'
-# >>> zsh-setup managed block >>>
+# >>> zsh-complete managed block >>>
 # --- Configuration Zsh ---
 export ZINIT_HOME="/usr/local/share/zinit/zinit.git"
 source "$ZINIT_HOME/zinit.zsh"
@@ -166,9 +203,9 @@ source "$ZINIT_HOME/zinit.zsh"
 # --- Plugins Zinit ---
 zinit light zsh-users/zsh-completions
 zinit light zsh-users/zsh-autosuggestions
-zinit light fzf-zsh-plugin
-zinit light zsh-zoxide
-zinit light zdharma-continuum/zsh-bat
+zinit light unixorn/fzf-zsh-plugin
+zinit light z-shell/zsh-zoxide
+zinit light fdellwing/zsh-bat
 zinit light zsh-users/zsh-syntax-highlighting
 
 # --- Oh My Posh ---
@@ -180,7 +217,7 @@ fi
 autoload -Uz compinit && compinit
 autoload -Uz colors && colors
 
-# --- Alias utiles ---
+# --- Alias utiles (outils modernes) ---
 alias ls='eza --git --icons'
 alias ll='eza -l --git --icons'
 alias la='eza -la --git --icons'
@@ -200,13 +237,17 @@ export BAT_STYLE="numbers,changes,header"
 
 # Configuration eza
 export EXA_ICON_SPACING=2
-# <<< zsh-setup managed block <<<
+
+# --- Navigation intelligente ---
+alias cd='z'
+alias cdi='zi'
+# <<< zsh-complete managed block <<<
 EOF
 else
   echo "ℹ️ Bloc de configuration déjà présent dans $ZSHRC."
 fi
 
-# --- Téléchargement d’un thème Oh My Posh ---
+# --- Téléchargement d'un thème Oh My Posh ---
 echo "🎨 Installation du thème Oh My Posh..."
 run sudo -u "$USER_NAME" mkdir -p "$USER_HOME/.config/oh-my-posh"
 
@@ -288,7 +329,7 @@ fi
 echo "🔁 Passage de Bash à Zsh..."
 zsh_path="$(command -v zsh || true)"
 if [[ -z "${zsh_path:-}" ]]; then
-  echo "❌ Zsh n’est pas installé correctement (binaire introuvable)." >&2
+  echo "❌ Zsh n'est pas installé correctement (binaire introuvable)." >&2
   exit 1
 fi
 current_shell=$(getent passwd "$USER_NAME" | cut -d: -f7 || echo "")
@@ -298,5 +339,45 @@ else
   echo "ℹ️ Zsh est déjà le shell par défaut pour $USER_NAME."
 fi
 
-echo "✅ Installation terminée !"
-echo "👉 Déconnectez-vous / reconnectez-vous pour activer Zsh et Oh My Posh."
+# --- Résumé de l'installation ---
+echo
+echo "🎉 Installation terminée !"
+echo
+echo "📋 Composants installés:"
+echo "   - Zsh (shell moderne)"
+echo "   - Zinit (gestionnaire de plugins)"
+echo "   - Oh My Posh (thème Catppuccin)"
+echo "   - JetBrainsMono Nerd Font (police avec icônes)"
+
+if [[ "$INSTALL_TOOLS" == true ]]; then
+  echo "   - Outils de productivité:"
+  echo "     • zoxide (navigation intelligente)"
+  echo "     • fzf (recherche floue)"
+  echo "     • fd (find moderne)"
+  echo "     • eza (ls moderne)"
+  echo "     • ripgrep (recherche rapide)"
+  echo "     • bat (cat moderne)"
+fi
+
+echo
+echo "🔧 Plugins Zsh configurés:"
+echo "   - zsh-completions (auto-complétion)"
+echo "   - zsh-autosuggestions (suggestions)"
+echo "   - unixorn/fzf-zsh-plugin (intégration fzf)"
+echo "   - z-shell/zsh-zoxide (navigation intelligente)"
+echo "   - zsh-bat (intégration bat)"
+echo "   - zsh-syntax-highlighting (coloration syntaxe)"
+
+echo
+echo "⚙️  Configuration appliquée:"
+echo "   - Alias modernes (ls→eza, cat→bat, find→fd, grep→rg)"
+echo "   - Variables d'environnement optimisées"
+echo "   - Thème Catppuccin Mocha pour Oh My Posh et bat"
+echo "   - Options fzf personnalisées"
+
+echo
+echo "💡 Prochaines étapes:"
+echo "   1. Redémarrez votre terminal pour activer Zsh"
+echo "   2. Configurez votre terminal pour utiliser JetBrainsMono Nerd Font"
+echo "   3. Profitez de votre environnement terminal moderne !"
+echo

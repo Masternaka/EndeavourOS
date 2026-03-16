@@ -1,25 +1,3 @@
-#### Script pour faire l'installation et la configuration de ZRAM sur Arch Linux #### (À modifier)
-
-Erreur dans le script
-Impossible d'écrire dans /var/log, utilisation de /tmp à la place
-./Activation_zram.sh: ligne 185 : [:  : nombre entier attendu
-Échec de la mise à jour de la base de données
-The unit files have no installation config (WantedBy=, RequiredBy=, UpheldBy=,
-Also=, or Alias= settings in the [Install] section, and DefaultInstance= for
-template units). This means they are not meant to be enabled or disabled using systemctl.
- 
-Possible reasons for having these kinds of units are:
-• A unit may be statically enabled by being symlinked from another unit's
-  .wants/, .requires/, or .upholds/ directory.
-• A unit's purpose may be to act as a helper for some other unit which has
-  a requirement dependency on it.
-• A unit may be started when needed via activation (socket, path, timer,
-  D-Bus, udev, scripted systemctl call, ...).
-• In case of template units, the unit is meant to be enabled with some
-  instance name specified.
-
-
-
 # Scripts disponibles pour l'activation de ZRAM avec configuration adaptative et sécurité renforcée
 
 # Utilisation:

@@ -1,16 +1,6 @@
 #!/bin/bash
 
-# ==============================================================================
-# Script pour l'installation, configuration et désinstallation
-# de ZRAM sur Arch Linux.
-#
-# Version améliorée avec sécurité renforcée et configuration adaptative
-#
-# Utilisation:
-# 1. Sauvegardez ce script sous un nom, par exemple: activation_zram.sh
-# 2. Rendez-le exécutable: chmod +x activation_zram.sh
-# 3. Exécutez-le: ./activation_zram.sh
-# ==============================================================================
+set -euo pipefail
 
 # --- Paramètres de Configuration (à modifier si besoin) ---
 
@@ -32,7 +22,8 @@ ZRAM_FS_TYPE="swap"
 PERFORM_TEST=false
 VERBOSE=false
 AUTO_CONFIG=true
-LOG_FILE="/var/log/zram-install.log"
+# Variable dédiée pour --purge
+PURGE=false
 
 # --- Variables de couleur ---
 C_RESET='\e[0m'
@@ -58,62 +49,25 @@ validate_input() {
     local input="$1"
     local pattern="$2"
     local description="$3"
-    
+
     if [[ ! "$input" =~ $pattern ]]; then
         print_message "ERROR" "$description invalide: $input"
         exit 1
     fi
 }
 
-# Initialisation sécurisée du fichier log
-init_log_file() {
-    # Créer le répertoire si nécessaire avec permissions sécurisées
-    mkdir -p "$(dirname "$LOG_FILE")"
-    chmod 755 "$(dirname "$LOG_FILE")"
-
-    # Vérifier les permissions d'écriture
-    if ! touch "$LOG_FILE" 2>/dev/null; then
-        LOG_FILE="/tmp/zram-install.log"
-        print_message "WARN" "Impossible d'écrire dans /var/log, utilisation de /tmp à la place"
-    fi
-
-    # Définir des permissions sécurisées sur le fichier log
-    chmod 640 "$LOG_FILE" 2>/dev/null
-
-    # Initialiser le log
-    log_message "--- Démarrage du script ZRAM v2.1 (Amélioré) ---"
-}
-
-# Fonction de logging sécurisée
-log_message() {
-    local message="$1"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] $message" >> "$LOG_FILE" 2>/dev/null || true
-}
-
 # Fonction d'affichage améliorée avec validation
 print_message() {
     local type="$1"
     local message="$2"
-    local timestamp=$(date '+%H:%M:%S')
-
-    # Validation des entrées
-    case "$type" in
-        "INFO"|"SUCCESS"|"WARN"|"ERROR"|"DEBUG") ;;
-        *) 
-            echo "[$timestamp] $message"
-            return
-            ;;
-    esac
-
-    # Logging automatique
-    log_message "[$type] $message"
+    local timestamp
+    timestamp=$(date '+%H:%M:%S')
 
     case "$type" in
-        "INFO") echo -e "${C_BLUE}[$timestamp] [INFO]${C_RESET} ${message}" ;;
+        "INFO")    echo -e "${C_BLUE}[$timestamp] [INFO]${C_RESET} ${message}" ;;
         "SUCCESS") echo -e "${C_GREEN}[$timestamp] [SUCCESS]${C_RESET} ${message}" ;;
-        "WARN") echo -e "${C_YELLOW}[$timestamp] [WARN]${C_RESET} ${message}" ;;
-        "ERROR") echo -e "${C_RED}[$timestamp] [ERROR]${C_RESET} ${message}" >&2 ;;
+        "WARN")    echo -e "${C_YELLOW}[$timestamp] [WARN]${C_RESET} ${message}" ;;
+        "ERROR")   echo -e "${C_RED}[$timestamp] [ERROR]${C_RESET} ${message}" >&2 ;;
         "DEBUG")
             if [ "$VERBOSE" = true ]; then
                 echo -e "${C_CYAN}[$timestamp] [DEBUG]${C_RESET} ${message}"
@@ -123,8 +77,9 @@ print_message() {
     esac
 }
 
-# Fonction de nettoyage améliorée en cas d'erreur
+# Désactivation du trap ERR en entrée pour éviter la récursion infinie
 cleanup_on_error() {
+    trap - ERR
     print_message "ERROR" "Une erreur s'est produite. Nettoyage en cours..."
 
     # Arrêter le service ZRAM s'il est actif
@@ -136,7 +91,7 @@ cleanup_on_error() {
     # Recharger systemd
     systemctl daemon-reload 2>/dev/null || true
 
-    print_message "ERROR" "Nettoyage terminé. Consultez les logs pour plus d'informations."
+    print_message "ERROR" "Nettoyage terminé."
     exit 1
 }
 
@@ -155,10 +110,16 @@ detect_optimal_config() {
     fi
 
     print_message "INFO" "Détection de la configuration optimale..."
-    
-    local ram_gb=$(free -g | awk '/^Mem:/{print $2}')
-    local ram_mb=$(free -m | awk '/^Mem:/{print $2}')
-    
+    local ram_gb
+    ram_gb=$(free -g | awk '/^Mem:/{print $2}')
+    local ram_mb
+    ram_mb=$(free -m | awk '/^Mem:/{print $2}')
+
+    if [[ ! "$ram_gb" =~ ^[0-9]+$ ]]; then
+        print_message "WARN" "Impossible de détecter la RAM (valeur: '$ram_gb'). Utilisation des valeurs par défaut."
+        ram_gb=0
+    fi
+
     print_message "INFO" "Mémoire totale détectée: ${ram_gb}GB (${ram_mb}MB)"
 
     # Configuration adaptative selon la RAM
@@ -177,18 +138,20 @@ detect_optimal_config() {
     else
         ZRAM_SIZE="min(ram / 2, 8G)"
         ZRAM_PRIORITY=200
-        print_message "INFO" "RAM importante détectée. configuration optimisée: min(ram/2, 8G), priorité 200"
+        print_message "INFO" "RAM importante détectée. Configuration optimisée: min(ram/2, 8G), priorité 200"
     fi
 
     # Vérification des autres swap actifs
-    local existing_swap_priority=$(swapon --show=PRIO --noheadings | sort -n | head -1 2>/dev/null || echo "100")
-    if [ "$existing_swap_priority" -ne "" ] && [ "$existing_swap_priority" -ge "$ZRAM_PRIORITY" ]; then
+    local existing_swap_priority
+    existing_swap_priority=$(swapon --show=PRIO --noheadings 2>/dev/null | awk 'NF{print $1}' | sort -n | head -n 1 || true)
+    existing_swap_priority=${existing_swap_priority//[^0-9]/}
+    if [[ -n "$existing_swap_priority" ]] && [[ "$existing_swap_priority" =~ ^[0-9]+$ ]] && [ "$existing_swap_priority" -ge "$ZRAM_PRIORITY" ]; then
         ZRAM_PRIORITY=$((existing_swap_priority + 10))
         print_message "INFO" "Ajustement de la priorité du swap à $ZRAM_PRIORITY pour être plus élevé que les swap existants"
     fi
 }
 
-# Validation des paramètres de configuration renforcée
+# Validation des paramètres de configuration
 validate_config() {
     print_message "DEBUG" "Validation de la configuration..."
 
@@ -196,7 +159,7 @@ validate_config() {
     validate_input "$ZRAM_COMP_ALGO" "^(zstd|lz4|lzo-rle|lzo)$" "Algorithme de compression"
     print_message "DEBUG" "Algorithme de compression valide: $ZRAM_COMP_ALGO"
 
-    # Validation de la taille ZRAM avec regex améliorée
+    # Validation de la taille ZRAM
     validate_input "$ZRAM_SIZE" "^(ram\s*/\s*[2-4])$|^([0-9]+[GMK])$|^min\(ram\s*/\s*[2-4],\s*[0-9]+[GMK]\)$" "Taille ZRAM"
     print_message "DEBUG" "Taille ZRAM valide: $ZRAM_SIZE"
 
@@ -211,14 +174,17 @@ validate_config() {
     print_message "SUCCESS" "Configuration validée avec succès"
 }
 
-# Vérification des prérequis système améliorée
+# Vérification des prérequis système
 check_system_requirements() {
     print_message "INFO" "Vérification des prérequis système..."
 
     # Vérification de la version du kernel
-    local kernel_version=$(uname -r | cut -d. -f1-2)
-    local kernel_major=$(echo "$kernel_version" | cut -d. -f1)
-    local kernel_minor=$(echo "$kernel_version" | cut -d. -f2)
+    local kernel_version
+    kernel_version=$(uname -r | cut -d. -f1-2)
+    local kernel_major
+    kernel_major=$(echo "$kernel_version" | cut -d. -f1)
+    local kernel_minor
+    kernel_minor=$(echo "$kernel_version" | cut -d. -f2)
 
     if [ "$kernel_major" -lt 3 ] || ([ "$kernel_major" -eq 3 ] && [ "$kernel_minor" -lt 15 ]); then
         print_message "WARN" "Version de kernel ancienne détectée: $kernel_version"
@@ -228,15 +194,15 @@ check_system_requirements() {
     fi
 
     # Vérification de l'espace disque disponible
-    local disk_space=$(df /var | awk 'NR==2 {print $4}')
+    local disk_space
+    disk_space=$(df /var | awk 'NR==2 {print $4}')
     if [ "$disk_space" -lt 1024 ]; then
         print_message "WARN" "Espace disque faible dans /var: ${disk_space}KB (recommandé: 1GB+)"
     else
         print_message "SUCCESS" "Espace disque suffisant: ${disk_space}KB"
     fi
 
-    # Vérification de la disponibilité des commandes essentielles
-    local required_commands=("systemctl" "pacman" "free" "awk" "grep" "sed")
+    local required_commands=("systemctl" "pacman" "free" "awk" "grep" "sed" "zramctl")
     for cmd in "${required_commands[@]}"; do
         if ! command -v "$cmd" &>/dev/null; then
             print_message "ERROR" "Commande requise manquante: $cmd"
@@ -254,9 +220,10 @@ backup_existing_config() {
     if [ -f "$config_file" ]; then
         mkdir -p "$BACKUP_DIR"
         chmod 700 "$BACKUP_DIR"
-        
+
         local backup_file="${BACKUP_DIR}/99-zram.conf.backup.$(date +%Y%m%d_%H%M%S)"
-        local temp_backup=$(mktemp "${BACKUP_DIR}/temp_backup.XXXXXX")
+        local temp_backup
+        temp_backup=$(mktemp "${BACKUP_DIR}/temp_backup.XXXXXX")
 
         # Copie atomique
         if cp "$config_file" "$temp_backup" && mv "$temp_backup" "$backup_file"; then
@@ -269,13 +236,14 @@ backup_existing_config() {
     fi
 }
 
-# Installation du paquet zram-generator avec validation
+# Installation du paquet zram-generator
 install_package() {
     print_message "INFO" "Vérification de l'installation de 'zram-generator'..."
 
     if pacman -Q zram-generator &>/dev/null; then
         print_message "SUCCESS" "'zram-generator' est déjà installé."
-        local version=$(pacman -Q zram-generator | awk '{print $2}')
+        local version
+        version=$(pacman -Q zram-generator | awk '{print $2}')
         print_message "INFO" "Version installée: $version"
 
         # Vérifier que le service est disponible
@@ -285,10 +253,9 @@ install_package() {
     else
         print_message "INFO" "Installation de 'zram-generator'..."
 
-        # Mise à jour de la base de données des paquets
-        print_message "INFO" "Mise à jour de la base de données des paquets..."
-        if ! pacman -Sy --noconfirm 2>&1 | grep -q "total"; then
-            print_message "WARN" "Échec de la mise à jour de la base de données"
+        print_message "INFO" "Mise à jour de la base de données des paquets (syu)..."
+        if ! pacman -Syu --noconfirm; then
+            print_message "WARN" "Échec de la mise à jour des paquets. Tentative d'installation directe..."
         fi
 
         # Installation du paquet
@@ -296,7 +263,6 @@ install_package() {
             print_message "SUCCESS" "'zram-generator' a été installé avec succès."
         else
             print_message "ERROR" "L'installation de zram-generator a échoué."
-            log_message "Installation échouée. Code de sortie: $?"
             exit $EXIT_ERROR
         fi
     fi
@@ -318,11 +284,12 @@ configure_zram() {
     chmod 755 "$(dirname "$CONFIG_FILE")"
 
     # Création atomique du fichier de configuration
-    local temp_config=$(mktemp "${CONFIG_FILE}.tmp.XXXXXX")
-    
+    local temp_config
+    temp_config=$(mktemp "${CONFIG_FILE}.tmp.XXXXXX")
+
     cat <<EOF > "$temp_config"
 # Fichier de configuration pour zram-generator
-# Généré par le script activation_zram.sh v2.1 (Amélioré)
+# Généré par le script activation_zram.sh v2.2 (Corrigé)
 # Date: $(date)
 #
 # Documentation:
@@ -370,26 +337,30 @@ activate_zram() {
         exit $EXIT_ERROR
     fi
 
-    # Activer le service au boot
-    if systemctl enable systemd-zram-setup@zram0.service; then
-        print_message "SUCCESS" "Service ZRAM activé au démarrage"
+    if systemctl is-enabled --quiet systemd-zram-setup@zram0.service 2>/dev/null; then
+        print_message "SUCCESS" "Service ZRAM déjà activé au démarrage"
     else
-        print_message "WARN" "Impossible d'activer le service au démarrage"
+        print_message "INFO" "Activation au démarrage: gérée automatiquement par zram-generator (unité statique)"
     fi
 
-    # Attendre un peu pour que le service s'initialise
-    sleep 2
+    # Attente active (max 15s) au lieu d'un sleep fixe fragile
+    print_message "INFO" "Attente de l'initialisation du service ZRAM..."
+    local retries=0
+    until systemctl is-active --quiet systemd-zram-setup@zram0.service 2>/dev/null || [ "$retries" -ge 15 ]; do
+        sleep 1
+        ((retries++))
+        print_message "DEBUG" "Attente... ($retries/15)"
+    done
 
-    # Vérifier que le service est actif
     if systemctl is-active --quiet systemd-zram-setup@zram0.service; then
-        print_message "SUCCESS" "Service ZRAM actif et fonctionnel"
+        print_message "SUCCESS" "Service ZRAM actif et fonctionnel (après ${retries}s)"
     else
-        print_message "ERROR" "Service ZRAM non actif après démarrage"
+        print_message "ERROR" "Service ZRAM non actif après ${retries}s d'attente"
         exit $EXIT_ERROR
     fi
 }
 
-# Test de performance ZRAM (optionnel)
+# Test de performance réel sur /dev/zram0 (pas sur /tmp)
 test_zram_performance() {
     print_message "INFO" "Test de performance ZRAM..."
 
@@ -399,28 +370,28 @@ test_zram_performance() {
         return 1
     fi
 
-    # Test d'écriture simple avec validation
-    local test_file=$(mktemp /tmp/zram_test_XXXXXX)
-    local test_size="100M"
-
-    print_message "INFO" "Test d'écriture de $test_size..."
-
-    if dd if=/dev/zero of="$test_file" bs=1M count=100 2>/dev/null; then
-        print_message "SUCCESS" "Test d'écriture réussi"
-
-        # Test de lecture
-        print_message "INFO" "Test de lecture..."
-        if dd if="$test_file" of=/dev/null bs=1M 2>/dev/null; then
-            print_message "SUCCESS" "Test de lecture réussi"
-        else
-            print_message "WARN" "Test de lecture échoué"
-        fi
-    else
-        print_message "WARN" "Test d'écriture échoué"
+    if [ ! -b "/dev/zram0" ]; then
+        print_message "WARN" "Périphérique /dev/zram0 introuvable, impossible de tester"
+        return 1
     fi
 
-    # Nettoyage sécurisé
-    rm -f "$test_file" 2>/dev/null || true
+    print_message "INFO" "Test d'écriture sur /dev/zram0 (50MB de données aléatoires)..."
+    local write_result
+    if write_result=$(dd if=/dev/urandom of=/dev/zram0 bs=1M count=50 2>&1); then
+        print_message "SUCCESS" "Test d'écriture réussi"
+        echo "$write_result" | grep -E "copied|MB/s|GB/s" || true
+    else
+        print_message "WARN" "Test d'écriture interrompu (normal si le périphérique est plein)"
+    fi
+
+    print_message "INFO" "Test de lecture depuis /dev/zram0..."
+    local read_result
+    if read_result=$(dd if=/dev/zram0 of=/dev/null bs=1M 2>&1); then
+        print_message "SUCCESS" "Test de lecture réussi"
+        echo "$read_result" | grep -E "copied|MB/s|GB/s" || true
+    else
+        print_message "WARN" "Test de lecture échoué"
+    fi
 
     print_message "SUCCESS" "Tests de performance terminés"
 }
@@ -453,7 +424,8 @@ verify_zram() {
     swapon --show
 
     # Vérifier l'utilisation
-    local zram_usage=$(zramctl | awk 'NR>1 {print $4}' | head -1)
+    local zram_usage
+    zram_usage=$(zramctl | awk 'NR>1 {print $4}' | head -1)
     if [ -n "$zram_usage" ] && [ "$zram_usage" != "0" ]; then
         print_message "SUCCESS" "ZRAM utilisé: $zram_usage"
     else
@@ -475,11 +447,6 @@ verify_zram() {
 
 # Désinstallation de ZRAM avec nettoyage sécurisé
 uninstall_zram() {
-    local full_uninstall=false
-    if [[ "$1" == "--purge" ]]; then
-        full_uninstall=true
-    fi
-
     print_message "INFO" "Désinstallation de ZRAM..."
 
     # Arrêter le service ZRAM
@@ -508,8 +475,8 @@ uninstall_zram() {
     systemctl daemon-reload 2>/dev/null || true
     print_message "SUCCESS" "ZRAM a été désactivé"
 
-    # Désinstaller le paquet si demandé
-    if $full_uninstall; then
+    # Désinstaller le paquet si --purge a été passé
+    if [ "$PURGE" = true ]; then
         print_message "INFO" "Désinstallation du paquet 'zram-generator'..."
         if pacman -Rns --noconfirm zram-generator; then
             print_message "SUCCESS" "Paquet 'zram-generator' désinstallé"
@@ -517,23 +484,18 @@ uninstall_zram() {
             print_message "WARN" "Impossible de désinstaller le paquet"
         fi
     else
-        print_message "INFO" "Le paquet 'zram-generator' est conservé. Utilisez 'uninstall --purge' pour le supprimer."
+        print_message "INFO" "Le paquet 'zram-generator' est conservé. Utilisez '--purge' pour le supprimer."
     fi
 
     print_message "SUCCESS" "Désinstallation terminée"
 }
 
-# Fonction de rollback améliorée
+# Rollback de l'installation
 rollback_installation() {
     print_message "INFO" "Rollback de l'installation..."
 
-    # Arrêter le service
     systemctl stop systemd-zram-setup@zram0.service 2>/dev/null || true
-
-    # Supprimer la configuration
     rm -f "$CONFIG_FILE" 2>/dev/null || true
-
-    # Recharger systemd
     systemctl daemon-reload 2>/dev/null || true
 
     print_message "SUCCESS" "Rollback terminé"
@@ -548,11 +510,9 @@ show_config_info() {
     echo "  Type FS: $ZRAM_FS_TYPE"
     echo "  Auto-config: $AUTO_CONFIG"
     echo "  Fichier de config: $CONFIG_FILE"
-    echo "  Log: $LOG_FILE"
     echo
 }
 
-# Parsing des arguments en ligne de commande avec validation
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -575,6 +535,10 @@ parse_arguments() {
                 ZRAM_PRIORITY="$2"
                 shift 2
                 ;;
+            --purge)
+                PURGE=true
+                shift
+                ;;
             --test)
                 PERFORM_TEST=true
                 shift
@@ -591,9 +555,14 @@ parse_arguments() {
                 show_usage
                 exit 0
                 ;;
-            *)
+            install|uninstall|verify|test|rollback)
                 COMMAND="$1"
                 shift
+                ;;
+            *)
+                print_message "ERROR" "Argument non reconnu: $1"
+                show_usage
+                exit 1
                 ;;
         esac
     done
@@ -604,48 +573,48 @@ show_usage() {
     echo "Usage: sudo $0 [COMMAND] [OPTIONS]"
     echo
     echo "Commandes:"
-    echo "  install          (défaut) Installe et configure ZRAM avec les paramètres du script."
-    echo "  uninstall        Désactive ZRAM et supprime sa configuration."
-    echo "  uninstall --purge  Fait la même chose que 'uninstall' et supprime aussi le paquet."
-    echo "  verify           Vérifie le statut actuel de ZRAM."
-    echo "  test             Teste les performances de ZRAM."
-    echo "  rollback         Annule l'installation et restaure l'état précédent."
+    echo "  install            (défaut) Installe et configure ZRAM."
+    echo "  uninstall          Désactive ZRAM et supprime sa configuration."
+    echo "  uninstall --purge  Désactive ZRAM et supprime aussi le paquet."
+    echo "  verify             Vérifie le statut actuel de ZRAM."
+    echo "  test               Teste les performances de ZRAM."
+    echo "  rollback           Annule l'installation et restaure l'état précédent."
     echo
     echo "Options:"
-    echo "  --size SIZE      Définit la taille ZRAM (ex: '4G', 'ram / 2')"
-    echo "  --algorithm ALGO Définit l'algorithme de compression (zstd, lz4, lzo-rle, lzo)"
-    echo "  --priority PRIO  Définit la priorité du swap (0-32767)"
-    echo "  --test           Effectue des tests de performance après installation"
-    echo "  --verbose, -v    Active le mode verbeux"
-    echo "  --no-auto-config Désactive la configuration automatique adaptative"
-    echo "  --help, -h       Affiche cette aide"
+    echo "  --size SIZE        Définit la taille ZRAM (ex: '4G', 'ram / 2')"
+    echo "  --algorithm ALGO   Définit l'algorithme (zstd, lz4, lzo-rle, lzo)"
+    echo "  --priority PRIO    Définit la priorité du swap (0-32767)"
+    echo "  --purge            Avec 'uninstall': supprime aussi le paquet"
+    echo "  --test             Effectue des tests de performance après installation"
+    echo "  --verbose, -v      Active le mode verbeux"
+    echo "  --no-auto-config   Désactive la configuration automatique adaptative"
+    echo "  --help, -h         Affiche cette aide"
     echo
     echo "Exemples:"
     echo "  sudo $0 install --size '8G' --algorithm lz4 --test"
     echo "  sudo $0 uninstall --purge"
     echo "  sudo $0 verify"
     echo
-    echo "Nouveautés v2.1:"
-    echo "  - Configuration automatique adaptative selon la RAM disponible"
-    echo "  - Validation renforcée des entrées utilisateur"
-    echo "  - Opérations atomiques pour la sécurité"
-    echo "  - Gestion améliorée des erreurs et permissions"
+    echo "Corrections v2.2:"
+    echo "  - Fix: --purge ne remplace plus la commande (bug critique)"
+    echo "  - Fix: pacman -Syu remplace -Sy (partial upgrade dangereux)"
+    echo "  - Fix: test de performance sur /dev/zram0 (pas /tmp)"
+    echo "  - Fix: trap ERR désactivé en entrée de cleanup (anti-récursion)"
+    echo "  - Fix: attente active remplace sleep 2 (robustesse)"
+    echo "  - Fix: zramctl ajouté aux dépendances vérifiées"
+    echo "  - Fix: validation de ram_gb avant comparaison numérique"
+    echo "  - Ajout: set -euo pipefail"
 }
 
 # --- Point d'entrée du script ---
 
 main() {
-    # Initialisation du fichier log
-    init_log_file
-
-    # Configuration du trap pour la gestion d'erreurs
     trap cleanup_on_error ERR
 
     # Vérification des privilèges
     check_root
 
-    # Parsing des arguments
-    COMMAND=${1:-install}
+    COMMAND="install"
     parse_arguments "$@"
 
     # Détection automatique de la configuration optimale
@@ -674,10 +643,9 @@ main() {
             fi
 
             print_message "SUCCESS" "Installation et configuration de ZRAM terminées !"
-            print_message "INFO" "Logs disponibles dans: $LOG_FILE"
             ;;
         uninstall)
-            uninstall_zram "$2"
+            uninstall_zram
             ;;
         verify)
             verify_zram
@@ -698,3 +666,4 @@ main() {
 
 # Exécution du script principal
 main "$@"
+print_message "INFO" "Script terminé."
