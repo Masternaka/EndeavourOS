@@ -91,7 +91,9 @@ check_deps() {
 enable_unit() {
   local unit="$1"
 
-  if ! systemctl list-unit-files --all | grep -q "^${unit}"; then
+  # Utiliser une recherche "fixed string" (pas regex) pour éviter les faux matchs
+  # (ex: '.' dans "bluetooth.service" en regex).
+  if ! systemctl list-unit-files --all --no-legend --no-pager "${unit}" 2>/dev/null | grep -Fq -- "${unit}"; then
     warn "${unit} — introuvable, ignoré."
     return
   fi
@@ -185,11 +187,21 @@ if ! $DRY_RUN; then
   ALL_SERVICES=( "${SERVICES[@]}" )
   [[ "$FIREWALL" != "none" ]] && ALL_SERVICES+=( "${FIREWALL}.service" )
 
-  systemctl list-units --type=service --state=active \
-    | grep -E "$(IFS='|'; echo "${ALL_SERVICES[*]}")" || true
+  grep_services=()
+  for u in "${ALL_SERVICES[@]}"; do
+    grep_services+=( -e "$u" )
+  done
 
-  systemctl list-timers --all \
-    | grep -E "$(IFS='|'; echo "${TIMERS[*]}")" || true
+  systemctl list-units --type=service --state=active --no-legend --no-pager \
+    | grep -F "${grep_services[@]}" || true
+
+  grep_timers=()
+  for t in "${TIMERS[@]}"; do
+    grep_timers+=( -e "$t" )
+  done
+
+  systemctl list-timers --all --no-legend --no-pager \
+    | grep -F "${grep_timers[@]}" || true
 fi
 
 echo ""

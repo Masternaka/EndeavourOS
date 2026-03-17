@@ -14,7 +14,6 @@ NC='\033[0m' # No Color
 # Options par défaut
 DRY_RUN=false
 VERBOSE=false
-BACKUP_CONFIG=true
 
 # Compteurs
 services_success=0
@@ -58,18 +57,6 @@ validate_service_name() {
     [[ "$service" =~ ^[a-zA-Z0-9_-]+\.(service|timer|socket|target|path|mount|automount|device|scope|slice)$ ]]
 }
 
-# Fonction de backup
-backup_service_config() {
-    local service=$1
-    if [[ "$BACKUP_CONFIG" == true ]]; then
-        local backup_dir="/etc/systemd/backup-$(date +%Y%m%d-%H%M%S)"
-        if [[ -f "/etc/systemd/system/$service" ]] || [[ -f "/usr/lib/systemd/system/$service" ]]; then
-            mkdir -p "$backup_dir"
-            print_verbose "Backup de la configuration pour $service"
-        fi
-    fi
-}
-
 # Parsing des arguments
 show_usage() {
     echo "Usage: sudo $0 [options]"
@@ -77,7 +64,6 @@ show_usage() {
     echo "Options:"
     echo "  --dry-run     Simule les actions sans rien modifier"
     echo "  --verbose     Affiche des logs détaillés"
-    echo "  --no-backup   Désactive le backup des configurations"
     echo "  --help, -h    Affiche cette aide"
     echo ""
     echo "Services qui seront traités:"
@@ -93,7 +79,6 @@ while [[ ${1:-} ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true ; shift ;;
         --verbose) VERBOSE=true ; shift ;;
-        --no-backup) BACKUP_CONFIG=false ; shift ;;
         --help|-h) show_usage ; exit 0 ;;
         *) echo "Argument inconnu: $1" >&2 ; show_usage ; exit 1 ;;
     esac
@@ -132,13 +117,14 @@ service_exists() {
     fi
     
     # Vérification avec systemctl list-unit-files
-    if systemctl list-unit-files | grep -q "^$service"; then
+    # Recherche "fixed string" pour éviter les faux matchs (ex: '.' dans bluetooth.service)
+    if systemctl list-unit-files --all --no-legend --no-pager "$service" 2>/dev/null | grep -Fq -- "$service"; then
         print_verbose "Service $service trouvé dans les unit files"
         return 0
     fi
     
     # Vérification supplémentaire pour les services générés dynamiquement
-    if systemctl list-units --all | grep -q "$service"; then
+    if systemctl list-units --all --no-legend --no-pager | grep -Fq -- "$service"; then
         print_verbose "Service $service trouvé dans les unités actives"
         return 0
     fi
@@ -157,9 +143,6 @@ process_service() {
         return 0  # Continue sans compter comme un échec
     fi
     
-    # Backup de la configuration
-    backup_service_config "$service"
-    
     print_info "Vérification du statut de $service"
     if [[ "$DRY_RUN" == false ]]; then
         systemctl status "$service" --no-pager || true
@@ -167,33 +150,19 @@ process_service() {
         print_verbose "[dry-run] systemctl status $service --no-pager"
     fi
     
-    print_info "Démarrage de $service"
+    print_info "Activation et démarrage de $service"
     if [[ "$DRY_RUN" == false ]]; then
-        if systemctl start "$service" 2>/dev/null; then
-            print_success "$service démarré avec succès"
-        else
-            print_error "Erreur lors du démarrage de $service"
-            ((services_failed++))
-            return 0  # Continue malgré l'erreur
-        fi
-    else
-        print_verbose "[dry-run] systemctl start $service"
-        print_success "$service serait démarré (dry-run)"
-    fi
-    
-    print_info "Activation de $service"
-    if [[ "$DRY_RUN" == false ]]; then
-        if systemctl enable "$service" 2>/dev/null; then
-            print_success "$service activé avec succès"
+        if systemctl enable --now "$service" 2>/dev/null; then
+            print_success "$service activé et démarré avec succès"
             ((services_success++))
         else
-            print_error "Erreur lors de l'activation de $service"
+            print_error "Erreur lors de l'activation/démarrage de $service"
             ((services_failed++))
             return 0  # Continue malgré l'erreur
         fi
     else
-        print_verbose "[dry-run] systemctl enable $service"
-        print_success "$service serait activé (dry-run)"
+        print_verbose "[dry-run] systemctl enable --now $service"
+        print_success "$service serait activé et démarré (dry-run)"
         ((services_success++))
     fi
 }
@@ -208,9 +177,6 @@ process_timer() {
         return 0  # Continue sans compter comme un échec
     fi
     
-    # Backup de la configuration
-    backup_service_config "$timer"
-    
     print_info "Vérification du statut de $timer"
     if [[ "$DRY_RUN" == false ]]; then
         systemctl status "$timer" --no-pager || true
@@ -218,19 +184,20 @@ process_timer() {
         print_verbose "[dry-run] systemctl status $timer --no-pager"
     fi
     
-    print_info "Activation de $timer"
+    print_info "Activation et démarrage de $timer"
     if [[ "$DRY_RUN" == false ]]; then
-        if systemctl enable "$timer" 2>/dev/null; then
-            print_success "$timer activé avec succès"
+        # Pour un timer, "enable" ne le démarre pas : utiliser --now
+        if systemctl enable --now "$timer" 2>/dev/null; then
+            print_success "$timer activé et démarré avec succès"
             ((timers_success++))
         else
-            print_error "Erreur lors de l'activation de $timer"
+            print_error "Erreur lors de l'activation/démarrage de $timer"
             ((timers_failed++))
             return 0  # Continue malgré l'erreur
         fi
     else
-        print_verbose "[dry-run] systemctl enable $timer"
-        print_success "$timer serait activé (dry-run)"
+        print_verbose "[dry-run] systemctl enable --now $timer"
+        print_success "$timer serait activé et démarré (dry-run)"
         ((timers_success++))
     fi
 }
@@ -256,8 +223,8 @@ print_info "Vérification du statut final des services :"
 for service in "${services[@]}"; do
     if service_exists "$service"; then
         if [[ "$DRY_RUN" == false ]]; then
-            systemctl is-active "$service" &> /dev/null
-            if [ $? -eq 0 ]; then
+            # Éviter un exit sous "set -e" quand le service est inactif
+            if systemctl is-active --quiet "$service"; then
                 print_success "$service : actif"
             else
                 print_error "$service : inactif"
@@ -275,8 +242,8 @@ print_info "Vérification du statut final des timers :"
 for timer in "${timers[@]}"; do
     if service_exists "$timer"; then
         if [[ "$DRY_RUN" == false ]]; then
-            systemctl is-enabled "$timer" &> /dev/null
-            if [ $? -eq 0 ]; then
+            # Éviter un exit sous "set -e" quand le timer n'est pas activé
+            if systemctl is-enabled --quiet "$timer"; then
                 print_success "$timer : activé"
             else
                 print_error "$timer : non activé"
