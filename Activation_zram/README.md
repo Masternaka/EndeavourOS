@@ -1,3 +1,5 @@
+À TESTER
+
 # Scripts disponibles pour l'activation de ZRAM avec configuration adaptative et sécurité renforcée
 
 # Utilisation:

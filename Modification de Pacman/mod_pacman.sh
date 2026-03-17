@@ -1,28 +1,6 @@
 #!/bin/bash
-set -euo pipefail
 
-###############################################################################
-# Script de modification du nombre de téléchargements parallèles dans pacman.conf
-# Version améliorée 2.0
-#
-# Utilisation:
-# 1. Sauvegardez ce script sous un nom, par exemple: mod-pacman.sh
-# 2. Rendez-le exécutable: chmod +x mod-pacman.sh
-# 3. Exécutez-le: sudo ./mod-pacman.sh [OPTIONS]
-#
-# Options:
-#   --restore    : Restaure la configuration originale
-#   --auto       : Détection automatique du nombre optimal
-#   --silent     : Mode silencieux (pas d'interaction utilisateur)
-#   --value N    : Définit directement la valeur N
-#   --help       : Affiche cette aide
-#
-# Exemples:
-#   sudo ./mod-pacman.sh --auto
-#   sudo ./mod-pacman.sh --value 5
-#   sudo ./mod-pacman.sh --silent --value 3
-#   sudo ./mod-pacman.sh --restore
-###############################################################################
+set -euo pipefail
 
 PACMAN_CONF="/etc/pacman.conf"
 BACKUP_DIR="/etc/pacman.conf.backups"

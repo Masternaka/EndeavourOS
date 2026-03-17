@@ -1,3 +1,8 @@
+Nouveau script à tester install_zsh_new.sh
+
+./setup-zsh.sh --dry-run   # simulation complète, rien n'est touché
+./setup-zsh.sh             # exécution réelle
+
 ## Installation Zsh + Zinit + Oh My Posh (Catppuccin) pour Arch/EndeavourOS (Fonctionne avec erreur)
 
 Erreur dans le script install_zsh_complete.sh:

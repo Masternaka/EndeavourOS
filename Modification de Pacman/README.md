@@ -1,5 +1,28 @@
 # Script de modification de Pacman: ParallelDownloads (FONCTIONNE)
 
+###############################################################################
+# Script de modification du nombre de téléchargements parallèles dans pacman.conf
+# Version améliorée 2.0
+#
+# Utilisation:
+# 1. Sauvegardez ce script sous un nom, par exemple: mod-pacman.sh
+# 2. Rendez-le exécutable: chmod +x mod-pacman.sh
+# 3. Exécutez-le: sudo ./mod-pacman.sh [OPTIONS]
+#
+# Options:
+#   --restore    : Restaure la configuration originale
+#   --auto       : Détection automatique du nombre optimal
+#   --silent     : Mode silencieux (pas d'interaction utilisateur)
+#   --value N    : Définit directement la valeur N
+#   --help       : Affiche cette aide
+#
+# Exemples:
+#   sudo ./mod-pacman.sh --auto
+#   sudo ./mod-pacman.sh --value 5
+#   sudo ./mod-pacman.sh --silent --value 3
+#   sudo ./mod-pacman.sh --restore
+###############################################################################
+
 Ce dossier contient le script `mod_pacman.sh` (Version améliorée 2.0) permettant de consulter, modifier ou désactiver la valeur `ParallelDownloads` dans le fichier de configuration de Pacman (`/etc/pacman.conf`). Il gère automatiquement la sauvegarde, la restauration et la validation de la configuration.
 
 ## Fonctionnalités

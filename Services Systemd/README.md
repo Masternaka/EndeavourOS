@@ -1,6 +1,13 @@
-# Script d'activation des services et timers systemd (Bluetooth, UFW et paccache.timerne fonctionnent pas)
+Nouveau script activation_services_new.sh, à tester. 
 
-Sur endeavourOS par défault c'est firewalld qui est installé. Pour le bluetooth sudo systemctl status bluetooth
+chmod +x ./enable-services.sh pour rendre le script exécutable
+Utiliser la commande ./enable-services.sh --dry-run pour tester avant d'exécuter le script.
+sudo ./enable-services.sh pour utiliser le script
+
+
+
+
+# Script d'activation des services et timers systemd
 
 Ce dossier contient le script `activation_services.sh` destiné à activer et vérifier des services et timers systemd essentiels sur un système Arch/EndeavourOS. Le script propose une interface claire avec couleurs, des contrôles de disponibilité, des options avancées et un récapitulatif de fin d'exécution.
 
