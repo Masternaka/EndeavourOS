@@ -1,5 +1,7 @@
 #!/bin/bash
 
+## Fonctionne pas
+
 # Script d'installation d'outils de productivité sur Arch Linux
 # zoxide: outil de navigation de répertoires intelligent
 # fzf: outil de recherche floue en ligne de commande

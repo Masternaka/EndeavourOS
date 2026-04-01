@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+## Ajouter au script l'instalation de Flatpak. Focntinne mais l'installation des applications ne se fait pas.
+
+
 ###############################################################################
 # Script d'installation automatisée des applications Flatpak
 #

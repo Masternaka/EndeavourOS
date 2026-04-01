@@ -3,6 +3,8 @@
 # Script d'installation et configuration de Yazi pour Arch Linux
 # Yazi est un gestionnaire de fichiers modal, rapide et full-featured écrit en Rust
 
+## Pacman ne trouve pas cette dépendance, ueberzug+
+
 set -e
 
 echo "╔════════════════════════════════════════════════════════════╗"

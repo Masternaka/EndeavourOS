@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+#FONCTIONNE
+
 ###############################################################################
 # Script d'installation de XFCE pour Arch/EndeavourOS
 #
