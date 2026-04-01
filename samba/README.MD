@@ -1,4 +1,4 @@
-# Installation Samba Arch Linux / EndeavourOS
+# Installation Samba Arch Linux / EndeavourOS (À VÉRIFIER, NE FONCTIONNE PAS)
 
 Ce dossier contient un script d'installation et de configuration de **Samba** pour Arch Linux / EndeavourOS.
 

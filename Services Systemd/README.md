@@ -1,4 +1,4 @@
-Nouveau script activation_services_new.sh, à tester. 
+Nouveau script activation_services.sh (FONCTIONNE) 
 
 chmod +x ./enable-services.sh pour rendre le script exécutable
 Utiliser la commande ./enable-services.sh --dry-run pour tester avant d'exécuter le script.

@@ -1,6 +1,4 @@
-À TESTER
-
-# Scripts disponibles pour l'activation de ZRAM avec configuration adaptative et sécurité renforcée
+# Scripts disponibles pour l'activation de ZRAM avec configuration adaptative et sécurité renforcée (FONCTIONNE)
 
 # Utilisation:
 # 1. Rendez le script exécutable: chmod +x activation_zram.sh
