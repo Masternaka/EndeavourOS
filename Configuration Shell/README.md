@@ -1,8 +1,8 @@
-# Configuration des alias Bash/Zsh/Fish
+# Configuration des alias Bash/Zsh (À vérifier s'il fonctionne)
 
 Ce dossier contient deux fichiers:
 - `ajout_alias.sh`: script d’installation et de gestion d’un bloc d’alias pour vos shells.
-- `mes_alias_bashzsh.sh`: fichier d’alias prêt à l’emploi, sourcé par vos fichiers de configuration (`.bashrc`, `.zshrc`, `config.fish`).
+- `mes_alias_bashzsh.sh`: fichier d’alias prêt à l’emploi, sourcé par vos fichiers de configuration (`.bashrc`, `.zshrc`).
 
 ## Objectifs
 - Installer proprement un bloc d’alias dans votre shell.
@@ -11,7 +11,7 @@ Ce dossier contient deux fichiers:
 
 ## Prérequis
 - Environnement utilisateur Unix-like (Arch/EndeavourOS, etc.).
-- Droits d’écriture sur `~/.bashrc`, `~/.zshrc` ou `~/.config/fish/config.fish`.
+- Droits d’écriture sur `~/.bashrc` ou `~/.zshrc`.
 - Outils standard: `bash`, `sed`, `awk`.
 
 ## Installation
@@ -30,7 +30,7 @@ chmod +x ajout_alias.sh
 ```bash
 ./ajout_alias.sh --interactive
 ```
-- Appliquer à tous les shells détectés (bash, zsh, fish):
+- Appliquer à tous les shells détectés (bash, zsh):
 ```bash
 ./ajout_alias.sh --all-shells
 ```
@@ -56,7 +56,7 @@ chmod +x ajout_alias.sh
 - `-h, --help` : affiche l’aide.
 
 ## Détails de fonctionnement
-- Le script détecte la présence de `~/.bashrc`, `~/.zshrc` et `~/.config/fish/config.fish`.
+- Le script détecte la présence de `~/.bashrc` et `~/.zshrc`.
 - Il crée un dossier de sauvegardes `~/.alias_backups` puis sauvegarde le fichier `rc` ciblé avant modification.
 - Il supprime tout ancien bloc d’alias délimité par:
   - `# >>> ALIAS START <<<` et `# <<< ALIAS END <<<`
@@ -91,8 +91,6 @@ Après installation ou modification:
 source ~/.bashrc
 # zsh
 source ~/.zshrc
-# fish
-source ~/.config/fish/config.fish
 ```
 
 ## Dépannage
