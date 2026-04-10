@@ -117,6 +117,7 @@ install_aur_packages() {
       # Utilitaires
       pacseek
       ipscan
+      shelly-bin
 
       # Navigateur internet
       brave-bin

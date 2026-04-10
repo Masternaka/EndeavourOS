@@ -168,7 +168,9 @@ install_packages() {
       flameshot
       gnome-disk-utility
       gparted
-      gufw
+      #gufw
+      #firewalld
+      firewall-config
       openrgb
       qbittorrent
       transmission-qt
