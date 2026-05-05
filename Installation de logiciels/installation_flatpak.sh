@@ -128,14 +128,14 @@ setup_flathub_remote() {
 
 # Liste des applications Flatpak à installer
 applications=(
-    "com.usebottles.bottles:Bottles - Gestionnaire de bouteilles Wine"
-    #"org.dupot.easyflatpak:EasyFlatpak - Interface graphique Flatpak"
-    "io.github.flattool.Warehouse:Warehouse - Gestionnaire d'applications Flatpak"
-    "com.github.tchx84.Flatseal:Flatseal - Gestionnaire de permissions Flatpak"
-    "io.github.giantpinkrobots.flatsweep:FlatSweep - Nettoyeur de données Flatpak"
-    "io.github.kolunmi.Bazaar:Bazaar - Gestionnaire de paquets Flatpak"
-    #"io.github.dvlv.boxbuddyrs:Box Buddy - Gestionnaire de paquets Flatpak"
-    #"it.mijorus.gearlever:Gearlever - Gestionnaire de paquets Flatpak"
+    "com.usebottles.bottles:Bottles"
+    #"org.dupot.easyflatpak:EasyFlatpak"
+    "io.github.flattool.Warehouse:Warehouse"
+    "com.github.tchx84.Flatseal:Flatseal"
+    "io.github.giantpinkrobots.flatsweep:FlatSweep"
+    "io.github.kolunmi.Bazaar:Bazaar"
+    #"io.github.dvlv.boxbuddyrs:Box Buddy"
+    #"it.mijorus.gearlever:Gearlever"
 )
 
 # Fonction pour afficher la liste des applications

@@ -197,6 +197,7 @@ install_packages() {
       # Multimédia
       strawberry
       vlc
+      mpv
 
       # Communication
       discord
